@@ -996,3 +996,45 @@ body {
   line-height: 1.5;
 }
 
+/* ==========================================================================
+   Mobile Responsive Adjustments
+   ========================================================================== */
+@media (max-width: 768px) {
+  .app-navbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .brand-section {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .nav-stats {
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .nav-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    gap: 8px;
+  }
+  .btn-nav-action,
+  .btn-nav-primary {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+    text-align: center;
+  }
+  .tt-matrix-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-card {
+    width: 95%;
+    max-height: 90vh;
+  }
+}
+
+
