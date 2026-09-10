@@ -782,29 +782,38 @@ body {
   overflow-y: auto;
 }
 
-/* Bookmarklet Drag Button inside Modal */
+/* Bookmarklet Drag & Copy Action Box inside Modal */
 .bm-drag-box,
-.bm-drag-zone {
-  text-align: center;
-  padding: 20px 16px;
-  border: 2px dashed rgba(99, 102, 241, 0.4);
-  border-radius: var(--radius-sm);
-  background: rgba(99, 102, 241, 0.05);
+.bm-drag-zone,
+.bm-actions-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  padding: 22px 18px;
+  border: 2px dashed rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-sm);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.bm-actions-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn-drag-bookmarklet {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 11px 22px;
   background: var(--grad-primary);
   color: #ffffff;
   border-radius: var(--radius-full);
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   text-decoration: none;
   cursor: grab;
@@ -814,7 +823,30 @@ body {
 
 .btn-drag-bookmarklet:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 35px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+}
+
+.btn-copy-bookmarklet {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background: rgba(30, 41, 59, 0.9);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.btn-copy-bookmarklet:hover {
+  background: rgba(51, 65, 85, 0.95);
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+  color: #ffffff;
 }
 
 /* Toast */

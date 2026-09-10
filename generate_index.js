@@ -155,14 +155,20 @@ const html = `<!DOCTYPE html>
           請將下方按鈕<strong>直接拖曳至瀏覽器的「書籤列」</strong>。前往臺大選課結果頁面點擊一下，即可自動抓取課表並同步儲存到此頁面，還能一鍵匯出日曆！
         </p>
 
-        <!-- Drag Button Box -->
-        <div class="bm-drag-box">
-          <a class="btn-drag-bookmarklet" id="bm-drag-link" href="${bookmarkletHref}" onclick="event.preventDefault(); alert('請將我「拖曳」到瀏覽器的書籤列喔！');">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            🎓 臺大課程日曆好朋友
-          </a>
-          <span style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
-            👆 按住此按鈕拖移到瀏覽器上方的書籤列 (Bookmark Bar)
+        <!-- Drag / Copy Actions Container -->
+        <div class="bm-actions-container">
+          <div class="bm-actions-row">
+            <a class="btn-drag-bookmarklet" id="bm-drag-link" href="${bookmarkletHref}" onclick="event.preventDefault(); alert('請按住我「拖曳」至瀏覽器書籤列！若平時隱藏書籤列，可點擊右側「複製書籤代碼」！');">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              👆 拖曳至書籤列
+            </a>
+            <button class="btn-copy-bookmarklet" id="btn-copy-bm-code" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              📋 複製書籤代碼
+            </button>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px; text-align: center; line-height: 1.6;">
+            💡 <strong>平時隱藏書籤列？</strong> 點選「複製書籤代碼」後，在選課結果頁按 <kbd style="background:#1e293b;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);color:#94a3b8">F12</kbd> 開啟 Console 貼上執行；或按 <kbd style="background:#1e293b;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,0.2);color:#94a3b8">Ctrl+D</kbd> 加任意網頁為書籤，點「編輯」將網址貼換為此代碼！
           </span>
         </div>
 
@@ -982,6 +988,45 @@ const html = `<!DOCTYPE html>
       } catch (e) {
         alert('瀏覽器不支援直接讀取剪貼簿，請使用 Ctrl+V 手動貼上！');
       }
+    });
+
+    // Copy bookmarklet code button
+    document.getElementById('btn-copy-bm-code').addEventListener('click', async () => {
+      const href = document.getElementById('bm-drag-link').getAttribute('href');
+      const setSuccess = () => {
+        const btn = document.getElementById('btn-copy-bm-code');
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg> ✅ 已複製代碼！';
+        showToast('🎉 書籤代碼已成功複製到剪貼簿！');
+        setTimeout(() => { btn.innerHTML = origHTML; }, 2500);
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(href);
+          setSuccess();
+          return;
+        } catch (e) {}
+      }
+
+      // Robust fallback for file:// or non-HTTPS origins
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = href;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (successful) {
+          setSuccess();
+          return;
+        }
+      } catch (err) {}
+
+      prompt('請手動複製下列書籤代碼：', href);
     });
 
     // 啟動應用
