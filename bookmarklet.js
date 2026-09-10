@@ -377,13 +377,55 @@
           const mId = html.match(/課程識別碼[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
           if (mId) course.identifier = mId[1].trim();
 
-          // 6. 課程概述
+          // 6. 備註 (許多「請洽系所辦」的課程實際地點標註在備註中)
+          let remarksText = '';
+          const mRemarks = html.match(/備註[\s\S]*?<div[^>]*class="[^"]*prose[^"]*"[^>]*>([\s\S]*?)<\/div>/) ||
+                           html.match(/備註[\s\S]*?<p[^>]*class="[^"]*"[^>]*>([^<]+)<\/p>/);
+          if (mRemarks) {
+            remarksText = mRemarks[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          } else {
+            const mTextRemarks = text.match(/備註[：:\s]*([\s\S]*?)(?:課程概述|課程大綱|評量方式|$)/);
+            if (mTextRemarks && mTextRemarks[1].trim()) {
+              remarksText = mTextRemarks[1].replace(/\s+/g, ' ').trim().slice(0, 300);
+            }
+          }
+          if (remarksText) course.remarks = remarksText;
+
+          // 7. 課程概述
           const descMatch = html.match(/課程概述[\s\S]*?<div[^>]*class="[^"]*prose[^"]*"[^>]*>([\s\S]*?)<\/div>/);
           if (descMatch) {
             course.description = descMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
           } else {
             const match = text.match(/課程概述[：:\s]*([\s\S]*?)(?:課程目標|課程大綱|評量方式|指定閱讀|$)/);
             if (match && match[1].trim()) course.description = match[1].trim().slice(0, 400);
+          }
+
+          // 8. 若地點仍為空或為「請洽系所辦 / 依系所公告」，深度從「備註」與「課程說明」中解析真實地點
+          if (!course.locations.length || course.locations.every(l => l.includes('洽系所') || l.includes('公告') || l.includes('未定'))) {
+            const candidateTexts = [remarksText, course.description, text];
+            for (const src of candidateTexts) {
+              if (!src) continue;
+
+              // 模式 A：明確標記「上課地點/教室：...」或「上課地點在/為/於...」
+              const explicitLocMatch = src.match(/(?:上課地點|授課地點|上課教室|實體教室|上課位於|教室為|上課在|地點位於|地點)[：:\s]*(?:為|在|於)?\s*([^\n\r,，。；;]{2,25})/);
+              if (explicitLocMatch) {
+                let locCandidate = explicitLocMatch[1].replace(/^[為在於]\s*/, '').trim();
+                if (!locCandidate.includes('未定') && !locCandidate.includes('洽系所') && !locCandidate.includes('依學校') && !locCandidate.includes('時間')) {
+                  course.locations = [locCandidate];
+                  break;
+                }
+              }
+
+              // 模式 B：台大常見大樓/館舍代碼與教室編號 (支援數字樓層如 5樓 或 202室)
+              const bldgMatch = src.match(/([台臺基醫護生公管工電資文法社博理思新綜研卓越農海獸食水][A-Za-z0-9\u4e00-\u9fa5]{0,8}(?:館|樓|大樓|講堂|教室|所|中心|分館)?\s*(?:[A-Za-z0-9\-]{2,6}(?:講堂|教室|室|演講廳|會議室|討論室)?|(?:\d+|[一二三四五六七八九十]+)樓(?:[^\s,，。；;]{0,8}(?:講堂|教室|室|演講廳|會議室|討論室))?))/);
+              if (bldgMatch) {
+                const locCandidate = bldgMatch[1].replace(/\s+/g, ' ').trim();
+                if (locCandidate.length >= 3 && !locCandidate.includes('未定') && !locCandidate.includes('學分') && !locCandidate.includes('學生') && !locCandidate.includes('週') && !locCandidate.includes('星期')) {
+                  course.locations = [locCandidate];
+                  break;
+                }
+              }
+            }
           }
 
           if (onCourseUpdated) onCourseUpdated(course);
