@@ -222,6 +222,8 @@ const html = `<!DOCTYPE html>
         </div>
       </div>
     </div>
+  </div>
+
   <!-- Export to ICS Settings Modal -->
   <div class="modal-backdrop" id="modal-export-backdrop">
     <div class="modal-card">
