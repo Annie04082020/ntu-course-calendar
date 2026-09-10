@@ -350,12 +350,13 @@
       const courseName = a.textContent.trim();
       if (!courseName) continue;
 
-      let card = a;
-      for (let i = 0; i < 10; i++) {
-        if (!card.parentElement) break;
-        card = card.parentElement;
-        if (card.classList && (card.classList.contains('group') || card.offsetHeight > 100)) {
-          break;
+      let card = a.closest('tr, li, article, [class*="card"], [class*="item"]');
+      if (!card) {
+        card = a;
+        for (let i = 0; i < 6; i++) {
+          if (!card.parentElement || card.parentElement === doc.body) break;
+          if (card.parentElement.querySelectorAll('a[href*="/courses/"]').length > 1) break;
+          card = card.parentElement;
         }
       }
 
@@ -366,7 +367,8 @@
 
       const cardText = card.innerText || '';
 
-      const timePattern = /([一二三四五六日])\s*((?:\d{1,2}|[A-Da-d])(?:[,，]\s*(?:\d{1,2}|[A-Da-d]))*)/g;
+      // 精確匹配節次 (10 或 0~9, A~D，絕不誤配 07, 14 等日期數字)
+      const timePattern = /([一二三四五六日])\s*((?:10|[0-9A-Da-d])(?:[,，]\s*(?:10|[0-9A-Da-d]))*)/g;
       const timeSlots = [];
       let tm;
       while ((tm = timePattern.exec(cardText)) !== null) {
@@ -402,9 +404,11 @@
         if (instMatch) instructor = instMatch[1].trim();
       }
 
+      const serialUrlMatch = href.match(/\/courses\/[^\/]+\/(\d+)/);
       const serialMatch = cardText.match(/流水號\s*[:：]?\s*(\d+)/);
       const codeMatch = cardText.match(/課號\s*[:：]?\s*([A-Za-z0-9]+)/);
       const idMatch = cardText.match(/課程識別碼\s*[:：]?\s*([A-Za-z0-9\s]+)/);
+      const creditMatch = cardText.match(/(\d+(?:\.\d+)?)\s*學分/);
 
       const remarks = [];
       const remarkLines = cardText.split('\n').map(s => s.trim()).filter(Boolean);
@@ -414,15 +418,18 @@
         }
       }
 
+      const finalSerial = (serialUrlMatch ? serialUrlMatch[1] : (serialMatch ? serialMatch[1] : ''));
+
       courses.push({
-        id: 'c_' + (serialMatch ? serialMatch[1] : Math.random().toString(36).slice(2, 7)),
+        id: 'c_' + (finalSerial || Math.random().toString(36).slice(2, 7)),
         name: courseName,
         isEnrolled,
         url: href.startsWith('http') ? href : 'https://course.ntu.edu.tw' + href,
         instructor,
+        credits: creditMatch ? parseFloat(creditMatch[1]) : 0,
         timeSlots: [...new Set(timeSlots)],
         locations: [...new Set(locations)],
-        serial: serialMatch ? serialMatch[1] : '',
+        serial: finalSerial,
         code: codeMatch ? codeMatch[1] : '',
         identifier: idMatch ? idMatch[1].trim() : '',
         remarks: remarks.slice(0, 3).join('；'),
@@ -494,12 +501,12 @@
     return null;
   }
 
-  // ── 7. 背景抓取課程概述 (同源 course.ntu.edu.tw) ────────────────────────
+  // ── 7. 背景抓取課程概述與詳細資訊 (同源 course.ntu.edu.tw) ────────────────────────
   async function fetchCourseDescriptions(courses, onProgress) {
     if (!location.hostname.includes('course.ntu.edu.tw')) return;
     let completed = 0;
     for (const course of courses) {
-      if (!course.url || course.description) {
+      if (!course.url) {
         completed++;
         onProgress(completed, courses.length);
         continue;
@@ -510,9 +517,45 @@
           const html = await res.text();
           const doc = new DOMParser().parseFromString(html, 'text/html');
           const text = doc.body.innerText || '';
+
+          // 1. 課程概述
           const match = text.match(/課程概述[：:\s]*([\s\S]*?)(?:課程目標|課程大綱|評量方式|指定閱讀|$)/);
           if (match && match[1].trim()) {
             course.description = match[1].trim().slice(0, 400);
+          }
+
+          // 2. 補充教師 (若清單頁未抓到)
+          if (!course.instructor) {
+            const teacherMatch = text.match(/授課教師[：:\s]*([^\n\r]+)/);
+            if (teacherMatch) course.instructor = teacherMatch[1].trim().split(/[\s,，]+/)[0];
+          }
+
+          // 3. 補充學分 (若為 0 或未抓到)
+          if (!course.credits || course.credits === 0) {
+            const credMatch = text.match(/(\d+(?:\.\d+)?)\s*學分/);
+            if (credMatch) course.credits = parseFloat(credMatch[1]);
+          }
+
+          // 4. 補充教室
+          if (!course.locations || course.locations.length === 0) {
+            const locMatch = text.match(/(?:上課教室|教室|地點)[：:\s]*([^\n\r,，。]+)/);
+            if (locMatch) {
+              const loc = locMatch[1].trim();
+              if (loc && !loc.includes('未定') && !loc.includes('依系所')) course.locations = [loc];
+            }
+          }
+
+          // 5. 補充時間節次 (若原本未抓到或節次有疑慮)
+          if (!course.timeSlots || course.timeSlots.length === 0) {
+            const tp = /([一二三四五六日])\s*((?:10|[0-9A-Da-d])(?:[,，]\s*(?:10|[0-9A-Da-d]))*)/g;
+            const foundSlots = [];
+            let tm;
+            while ((tm = tp.exec(text)) !== null) {
+              foundSlots.push(tm[1] + ' ' + tm[2].replace(/[，\s]/g, ','));
+            }
+            if (foundSlots.length > 0) {
+              course.timeSlots = [...new Set(foundSlots)];
+            }
           }
         }
       } catch (e) {
