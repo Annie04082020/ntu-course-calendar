@@ -7,6 +7,13 @@ try {
   bookmarkletHref = 'javascript:void(0);';
 }
 
+let scriptableTemplate = '';
+try {
+  scriptableTemplate = fs.readFileSync('scriptable/template.js', 'utf8');
+} catch (e) {
+  scriptableTemplate = '// Error loading scriptable/template.js';
+}
+
 const html = `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -61,6 +68,10 @@ const html = `<!DOCTYPE html>
         <button class="btn-nav-action" id="btn-open-import-modal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
           代碼匯入
+        </button>
+        <button class="btn-nav-action" id="btn-open-scriptable-modal" title="匯出至 iPhone / iPad 桌面小工具">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          iOS 小工具
         </button>
         <button class="btn-nav-action" id="btn-reset-data" title="清除個人課表或重新載入示範">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -124,6 +135,10 @@ const html = `<!DOCTYPE html>
           <button class="btn-primary-block" id="btn-sidebar-dl">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             下載勾選課程行事曆 (.ics)
+          </button>
+          <button class="btn-secondary-block" id="btn-sidebar-scriptable" style="margin-top:8px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 14px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:var(--radius-sm); color:#60a5fa; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            產生 iOS / iPad 桌面小工具
           </button>
         </div>
       </aside>
@@ -262,6 +277,59 @@ const html = `<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- Scriptable Widget Modal -->
+  <div class="modal-backdrop" id="modal-scriptable-backdrop">
+    <div class="modal-card" style="width: 620px; max-width: 95%;">
+      <div class="modal-header">
+        <div class="modal-title">📱 iOS / iPad 桌面課表小工具 (Scriptable)</div>
+        <button class="modal-close" id="scriptable-close" aria-label="關閉">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+        <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin: 0;">
+          在 iPhone 與 iPad 桌面上即時查看課表！支援<strong>大尺寸/iPad 週課表矩陣</strong>與<strong>中尺寸今日時間軸</strong>自適應呈現，並支援 Siri 語音朗讀。
+        </p>
+
+        <!-- Step-by-step guidance pill cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 4px 0;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px;">
+            <div style="font-size: 11.5px; color: var(--accent-primary); font-weight: 700; margin-bottom: 2px;">步驟 1</div>
+            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">安裝 Scriptable</div>
+            <a href="https://apps.apple.com/app/scriptable/id1405459188" target="_blank" style="font-size: 11.5px; color: #60a5fa; text-decoration: underline; display: inline-block; margin-top: 4px;">前往 App Store 下載 ↗</a>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px;">
+            <div style="font-size: 11.5px; color: var(--accent-primary); font-weight: 700; margin-bottom: 2px;">步驟 2</div>
+            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">複製下方專屬腳本</div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">已自動載入您勾選的課表</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px;">
+            <div style="font-size: 11.5px; color: var(--accent-primary); font-weight: 700; margin-bottom: 2px;">步驟 3</div>
+            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">桌面新增小工具</div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">中尺寸/大尺寸皆可呈現</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);" id="scriptable-courses-count">已收錄 0 門課程代碼</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="scriptable-include-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer;">
+            <label for="scriptable-include-waitlist" style="font-size:12px; color:var(--text-secondary); cursor:pointer;">包含志願候補課程</label>
+          </div>
+        </div>
+
+        <!-- Textarea with generated code -->
+        <textarea id="scriptable-code-area" class="import-textarea" readonly style="height: 140px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; background: rgba(10, 15, 29, 0.85);"></textarea>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px;">
+          <button class="filter-pill" id="btn-cancel-scriptable">關閉</button>
+          <button class="btn-nav-primary" id="btn-copy-scriptable-code" style="gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            一鍵複製 Scriptable 腳本代碼
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Floating Toast Notification -->
   <div id="app-toast"></div>
 
@@ -293,6 +361,9 @@ const html = `<!DOCTYPE html>
     const WEEKDAY_OFFSET = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0 };
 
     const COLOR_CLASSES = ['c-indigo', 'c-emerald', 'c-cyan', 'c-violet', 'c-rose', 'c-amber', 'c-blue'];
+
+    // Scriptable iOS 小工具腳本模板
+    const SCRIPTABLE_TEMPLATE = ${JSON.stringify(scriptableTemplate)};
 
     // 課名標題純淨化：移除課號與流水號
     function cleanCourseTitle(rawName, code, serial, identifier) {
@@ -1092,6 +1163,81 @@ const html = `<!DOCTYPE html>
       modal.classList.remove('show');
     });
 
+    // Scriptable Widget Modal & Code Generator
+    function generateScriptableCode(selectedCourses, includeWaitlist = true) {
+      const targetCourses = includeWaitlist ? selectedCourses : selectedCourses.filter(c => c.isEnrolled);
+      const cleanData = targetCourses.map(c => ({
+        name: cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
+        instructor: c.instructor || '',
+        locations: c.locations || [],
+        timeSlots: c.timeSlots || [],
+        isEnrolled: c.isEnrolled !== false,
+        url: c.url || 'https://course.ntu.edu.tw'
+      }));
+      const jsonStr = JSON.stringify(cleanData, null, 2);
+      const placeholder = '/* __USER_COURSES_JSON__ */ [';
+      const startIdx = SCRIPTABLE_TEMPLATE.indexOf(placeholder);
+      if (startIdx === -1) return SCRIPTABLE_TEMPLATE;
+      const endIdx = SCRIPTABLE_TEMPLATE.indexOf('];', startIdx);
+      if (endIdx === -1) return SCRIPTABLE_TEMPLATE;
+      return SCRIPTABLE_TEMPLATE.slice(0, startIdx) + jsonStr + ';' + SCRIPTABLE_TEMPLATE.slice(endIdx + 2);
+    }
+
+    function openScriptableModal() {
+      const selected = courses.filter(c => selectedCourseIds.has(c.id));
+      if (!selected || selected.length === 0) {
+        alert('請先在左側勾選至少一門要匯出至小工具的課程！');
+        return;
+      }
+      const includeWaitlist = document.getElementById('scriptable-include-waitlist').checked;
+      const code = generateScriptableCode(selected, includeWaitlist);
+      document.getElementById('scriptable-code-area').value = code;
+      document.getElementById('scriptable-courses-count').textContent = \`已收錄 \${selected.length} 門課程代碼\`;
+
+      const modal = document.getElementById('modal-scriptable-backdrop');
+      modal.classList.add('open');
+      modal.classList.add('show');
+    }
+
+    document.getElementById('scriptable-include-waitlist').addEventListener('change', () => {
+      const selected = courses.filter(c => selectedCourseIds.has(c.id));
+      const includeWaitlist = document.getElementById('scriptable-include-waitlist').checked;
+      document.getElementById('scriptable-code-area').value = generateScriptableCode(selected, includeWaitlist);
+    });
+
+    document.getElementById('btn-open-scriptable-modal').addEventListener('click', openScriptableModal);
+    const sidebarScriptableBtn = document.getElementById('btn-sidebar-scriptable');
+    if (sidebarScriptableBtn) sidebarScriptableBtn.addEventListener('click', openScriptableModal);
+
+    document.getElementById('btn-copy-scriptable-code').addEventListener('click', async () => {
+      const codeArea = document.getElementById('scriptable-code-area');
+      const code = codeArea.value;
+      const setSuccess = () => {
+        const btn = document.getElementById('btn-copy-scriptable-code');
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ✅ 已複製 Scriptable 代碼！';
+        showToast('🎉 Scriptable 腳本已成功複製！請打開 Scriptable 貼上');
+        setTimeout(() => { btn.innerHTML = origHTML; }, 2500);
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(code);
+          setSuccess();
+          return;
+        } catch (e) {}
+      }
+      codeArea.select();
+      document.execCommand('copy');
+      setSuccess();
+    });
+
+    document.getElementById('btn-cancel-scriptable').addEventListener('click', () => {
+      const modal = document.getElementById('modal-scriptable-backdrop');
+      modal.classList.remove('open');
+      modal.classList.remove('show');
+    });
+
     // Reset / Toggle demo
     document.getElementById('btn-reset-data').addEventListener('click', () => {
       if (isDemoMode) {
@@ -1127,6 +1273,7 @@ const html = `<!DOCTYPE html>
     bindModal('btn-open-bm-modal', 'modal-bm-backdrop', 'bm-close');
     bindModal('btn-open-import-modal', 'modal-import-backdrop', 'import-close');
     bindModal(null, 'modal-export-backdrop', 'export-close');
+    bindModal(null, 'modal-scriptable-backdrop', 'scriptable-close');
     bindModal(null, 'modal-detail-backdrop', 'md-close');
 
     // Manual Import submission
