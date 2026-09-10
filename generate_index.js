@@ -176,8 +176,8 @@ const html = `<!DOCTYPE html>
           <h4 style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">使用 3 步驟：</h4>
           <ol style="color: var(--text-secondary); font-size: 13px; line-height: 1.8; padding-left: 20px;">
             <li>將上方書籤按鈕拖曳至瀏覽器書籤列。</li>
-            <li>登入並前往 <a href="https://course.ntu.edu.tw/result/prereg2/list" target="_blank" style="color: var(--accent-primary); text-decoration: underline;">臺大課程網選課結果</a> 或選課記錄頁面。</li>
-            <li>點擊書籤列的「臺大課程日曆好朋友」，彈跳視窗將提供<strong>「✨ 同步至網頁」</strong>與<strong>「下載日曆 (.ics)」</strong>！</li>
+            <li>登入並前往臺大課程網的 <a href="https://course.ntu.edu.tw/result/adddrop2/table" target="_blank" style="color: var(--accent-primary); text-decoration: underline;">課表結果 (/result/adddrop2/table)</a> 或 <a href="https://course.ntu.edu.tw/priority/table" target="_blank" style="color: var(--accent-primary); text-decoration: underline;">志願預選 (/priority/table)</a>。</li>
+            <li>點擊書籤列的「臺大課程日曆好朋友」，系統將自動擷取課程資訊並補齊時間、學分與教室，提供<strong>「✨ 同步至網頁」</strong>與<strong>「下載日曆 (.ics)」</strong>！</li>
           </ol>
         </div>
       </div>

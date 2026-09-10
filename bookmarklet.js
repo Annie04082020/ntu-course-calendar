@@ -3,13 +3,13 @@
  * 專為國立臺灣大學 (NTU) 學生打造
  * 
  * 支援平臺：
- * 1. 【臺大網路選課系統 (正選/加退選)】：
- *    - 時間表頁面 (coursetake2/coutake/cou-sched)
- *    - 選課記錄頁面 (coursetake2/coutake/mainscr)
- *    - 支援自動背景非同步獲取完整教室、教師、流水號與課程代碼
- * 2. 【臺大課程網 (預選/初選結果)】：
- *    - 初選結果列表 (course.ntu.edu.tw/result/prereg2/list)
+ * 【臺大課程網 (course.ntu.edu.tw)】：
+ *    - 加退選課表 (course.ntu.edu.tw/result/adddrop2/table)
+ *    - 志願預選課表 (course.ntu.edu.tw/priority/table)
  *    - 初選結果課表 (course.ntu.edu.tw/result/prereg2/table)
+ *    - 選課結果清單 (course.ntu.edu.tw/result/adddrop2/list, /prereg2/list)
+ *    - 自動讀取課程介紹詳細頁面，精確補齊教師、教室、時間、學分與大綱
+ *    - 自動刪除多時段與預選重複出現的課程
  * 
  * 核心功能：
  * - 自動區分「已選上課程」與「待分發/候補志願課程」
@@ -198,240 +198,63 @@
     return lines.join('\r\n');
   }
 
-  // ── 3. 解析器 A：臺大網路選課系統 (mainscr 選課記錄) ───────────────────
-  function parseMainscrTimeLoc(timeLocStr) {
-    const timeSlots = [];
-    const locations = [];
-    const regex = /([一二三四五六日])\s*([0-9ABCDabcd]+)(?:\s*\(([^)]+)\))?/g;
-    let m;
-    while ((m = regex.exec(timeLocStr)) !== null) {
-      const weekday = m[1];
-      const rawPeriods = m[2];
-      const loc = m[3] ? m[3].trim() : '';
-      const periods = rawPeriods.match(/10|[0-9A-Za-z]/g) || [];
-      if (periods.length > 0) {
-        timeSlots.push(weekday + ' ' + periods.join(','));
-      }
-      if (loc && !locations.includes(loc)) {
-        locations.push(loc);
-      }
-    }
-    return { timeSlots, locations };
-  }
-
-  function parseMainscrDoc(doc) {
-    const courses = [];
-    const trs = Array.from(doc.querySelectorAll('table tr'));
-    
-    for (const tr of trs) {
-      const tds = Array.from(tr.querySelectorAll('td'));
-      if (tds.length < 8) continue;
-
-      const statusText = tds[0].textContent.trim();
-      const serial = tds[1].textContent.trim();
-      const codeIdText = tds[2].textContent.trim();
-      const name = tds[3].textContent.trim();
-      const section = tds[4].textContent.trim();
-      const credits = tds[5].textContent.trim();
-      const instructor = tds[6].textContent.trim();
-      const timeLoc = tds[7].textContent.trim();
-
-      // 檢查是否為標題列
-      if (statusText === '狀態' || !serial.match(/^\d+$/) || !name) continue;
-
-      const isEnrolled = statusText.includes('已選上');
-      const { timeSlots, locations } = parseMainscrTimeLoc(timeLoc);
-      const codeParts = codeIdText.split(/\s+/);
-      const code = codeParts[0] || '';
-      const identifier = codeParts.slice(1).join(' ') || '';
-
-      courses.push({
-        id: 'c_' + serial,
-        name,
-        isEnrolled,
-        instructor,
-        serial,
-        code,
-        identifier,
-        timeSlots,
-        locations,
-        remarks: (section ? '班次: ' + section + '；' : '') + (credits ? credits + ' 學分' : ''),
-        url: `https://course.ntu.edu.tw/courses/115-1/${serial}`,
-        description: '',
-      });
-    }
-
-    return courses;
-  }
-
-  // ── 4. 解析器 B：臺大選課系統 (cou-sched 時間表備用網格解析) ────────────
-  function parseCouSchedDoc(doc) {
-    const coursesMap = new Map();
-    const table = doc.querySelector('table');
-    if (!table) return [];
-
-    const rows = Array.from(table.querySelectorAll('tr'));
-    if (rows.length < 2) return [];
-
-    const weekdays = ['一', '二', '三', '四', '五', '六'];
-
-    for (let r = 1; r < rows.length; r++) {
-      const tr = rows[r];
-      const cells = Array.from(tr.querySelectorAll('td, th'));
-      if (cells.length < 2) continue;
-
-      const periodCellText = cells[0].textContent.trim();
-      const periodMatch = periodCellText.match(/(?:^|\D)(10|[0-9A-D])(?:\D|$)/i);
-      if (!periodMatch) continue;
-      const period = periodMatch[1].toUpperCase();
-
-      for (let c = 1; c < Math.min(cells.length, 7); c++) {
-        const weekday = weekdays[c - 1];
-        const cell = cells[c];
-        const text = cell.textContent.trim();
-        if (!text) continue;
-
-        // 判斷是否待分發
-        const isWaitlist = cell.innerHTML.includes('待分發') || cell.className.includes('wait') || (cell.getAttribute('style') && cell.getAttribute('style').includes('green'));
-        const isEnrolled = !isWaitlist;
-
-        const courseName = text.replace(/[\n\r]+/g, ' ').trim();
-        if (!coursesMap.has(courseName)) {
-          coursesMap.set(courseName, {
-            id: 'sched_' + Math.random().toString(36).slice(2, 7),
-            name: courseName,
-            isEnrolled,
-            instructor: '',
-            serial: '',
-            code: '',
-            identifier: '',
-            timeSlots: [],
-            locations: [],
-            remarks: '',
-            url: 'https://course.ntu.edu.tw',
-            description: '',
-            _slots: {}
-          });
-        }
-        const item = coursesMap.get(courseName);
-        if (!item._slots[weekday]) item._slots[weekday] = [];
-        if (!item._slots[weekday].includes(period)) item._slots[weekday].push(period);
-      }
-    }
-
-    const courses = Array.from(coursesMap.values()).map(c => {
-      const timeSlots = [];
-      for (const [w, plist] of Object.entries(c._slots)) {
-        timeSlots.push(`${w} ${plist.join(',')}`);
-      }
-      c.timeSlots = timeSlots;
-      delete c._slots;
-      return c;
-    });
-
-    return courses;
-  }
-
-  // ── 5. 解析器 C：臺大課程網 (course.ntu.edu.tw) ─────────────────────────
+  // ── 3. 臺大課程網解析器 (course.ntu.edu.tw) ─────────────────────────
   function parseCourseNtuDoc(doc) {
     const courses = [];
-    const seen = new Set();
+    const seenSerials = new Set();
+    const seenHrefs = new Set();
+    const seenNames = new Set();
+
+    // 尋找所有導向課程介紹頁面的連結 (如 /courses/115-1/13707 或包含 /courses/ 的 a 標籤)
     const courseLinks = Array.from(doc.querySelectorAll('a[href*="/courses/"]'));
 
     const unselectedHeader = Array.from(doc.querySelectorAll('*')).find(el => 
-      el.children.length === 0 && el.textContent.trim().startsWith('未選上課程')
+      el.children.length === 0 && (el.textContent.trim().startsWith('未選上') || el.textContent.trim().startsWith('未中籤'))
     );
 
     for (const a of courseLinks) {
-      const href = a.getAttribute('href') || '';
-      if (seen.has(href)) continue;
-      seen.add(href);
+      let href = a.getAttribute('href') || '';
+      if (!href) continue;
+      const cleanHref = href.split('?')[0].split('#')[0];
+      const serialMatch = cleanHref.match(/\/courses\/[^\/]+\/(\d+)/);
+      const serial = serialMatch ? serialMatch[1] : '';
 
-      const courseName = a.textContent.trim();
-      if (!courseName) continue;
+      // 去重檢查（依據使用者需求：預選課表自動刪除重複出現的課程）
+      if (serial && seenSerials.has(serial)) continue;
+      if (!serial && seenHrefs.has(cleanHref)) continue;
 
-      let card = a.closest('tr, li, article, [class*="card"], [class*="item"]');
-      if (!card || card.querySelectorAll('a[href*="/courses/"]').length > 1) {
-        card = a;
-        while (card.parentElement && card.parentElement !== doc.body) {
-          if (card.parentElement.querySelectorAll('a[href*="/courses/"]').length > 1) break;
-          card = card.parentElement;
-        }
+      let courseName = (a.innerText || a.textContent || '').trim();
+      // 若包含換行（如卡片內有其他文字），取第一行做為課名
+      if (courseName.includes('\n')) {
+        courseName = courseName.split('\n')[0].trim();
       }
+      if (!courseName || courseName.length > 60) continue;
+      if (seenNames.has(courseName) && !serial) continue;
+
+      if (serial) seenSerials.add(serial);
+      seenHrefs.add(cleanHref);
+      seenNames.add(courseName);
 
       let isEnrolled = true;
-      if (unselectedHeader && (unselectedHeader.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+      if (unselectedHeader && (unselectedHeader.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_FOLLOWING)) {
         isEnrolled = false;
       }
 
-      const cardText = card.innerText || '';
-
-      // 精確匹配節次 (10 或 0~9, A~D，絕不誤配 07, 14 等日期數字，也不匹配如 09:00 之時鐘時間)
-      const timePattern = /(?:^|[^\d/])([一二三四五六日])\s*((?:10|[0-9A-Da-d])(?:[,，\s]*(?:10|[0-9A-Da-d]))*)(?!\s*[:：])/g;
-      const timeSlots = [];
-      let tm;
-      while ((tm = timePattern.exec(cardText)) !== null) {
-        timeSlots.push(tm[1] + ' ' + tm[2].replace(/[，\s]/g, ','));
-      }
-
-      const locations = [];
-      const badges = Array.from(card.querySelectorAll('div, span'))
-        .map(el => el.textContent.trim())
-        .filter(t => t.length > 0 && t.length < 25);
-
-      for (const t of badges) {
-        if (/^[普博資電工管文法醫社外音體綜新研思]\S*\d{2,4}/.test(t) || /^[A-Za-z0-9\u4e00-\u9fa5]+(?:館|樓|所|大樓)\d*/.test(t)) {
-          if (!locations.includes(t) && !t.includes('學分') && !t.includes('選上') && !t.includes('人') && !t.includes('班')) {
-            locations.push(t);
-          }
-        }
-      }
-
-      const locRegex = /(?:上課地點|上課教室|教室)[：:\s]*([^\s,，。\n\r]+)/g;
-      let lm;
-      while ((lm = locRegex.exec(cardText)) !== null) {
-        const loc = lm[1].replace(/[。，,]/g, '').trim();
-        if (loc && !locations.includes(loc)) locations.push(loc);
-      }
-
-      let instructor = '';
-      const instBadge = badges.find(b => /^[\u4e00-\u9fa5]{2,4}$/.test(b) && !['已選上','未選上','英文授課','領域專長','全英語','必修','選修'].includes(b));
-      if (instBadge) {
-        instructor = instBadge;
-      } else {
-        const instMatch = cardText.match(/授課教師[：:\s]*([^\n\r]+)/);
-        if (instMatch) instructor = instMatch[1].trim();
-      }
-
-      const serialUrlMatch = href.match(/\/courses\/[^\/]+\/(\d+)/);
-      const serialMatch = cardText.match(/流水號\s*[:：]?\s*(\d+)/);
-      const codeMatch = cardText.match(/課號\s*[:：]?\s*([A-Za-z0-9]+)/);
-      const idMatch = cardText.match(/課程識別碼\s*[:：]?\s*([A-Za-z0-9\s]+)/);
-      const creditMatch = cardText.match(/(\d+(?:\.\d+)?)\s*學分/);
-
-      const remarks = [];
-      const remarkLines = cardText.split('\n').map(s => s.trim()).filter(Boolean);
-      for (const line of remarkLines) {
-        if (line.includes('授課') || line.includes('本課程') || line.includes('限') || line.includes('備註')) {
-          if (!remarks.includes(line) && line.length < 80) remarks.push(line);
-        }
-      }
-
-      const finalSerial = (serialUrlMatch ? serialUrlMatch[1] : (serialMatch ? serialMatch[1] : ''));
+      const fullUrl = href.startsWith('http') ? href : 'https://course.ntu.edu.tw' + href;
 
       courses.push({
-        id: 'c_' + (finalSerial || Math.random().toString(36).slice(2, 7)),
+        id: 'c_' + (serial || Math.random().toString(36).slice(2, 7)),
         name: courseName,
         isEnrolled,
-        url: href.startsWith('http') ? href : 'https://course.ntu.edu.tw' + href,
-        instructor,
-        credits: creditMatch ? parseFloat(creditMatch[1]) : 0,
-        timeSlots: [...new Set(timeSlots)],
-        locations: [...new Set(locations)],
-        serial: finalSerial,
-        code: codeMatch ? codeMatch[1] : '',
-        identifier: idMatch ? idMatch[1].trim() : '',
-        remarks: remarks.slice(0, 3).join('；'),
+        url: fullUrl,
+        instructor: '',
+        credits: 0,
+        timeSlots: [],
+        locations: [],
+        serial: serial,
+        code: '',
+        identifier: '',
+        remarks: '',
         description: '',
       });
     }
@@ -439,74 +262,35 @@
     return courses;
   }
 
-  // ── 6. 跨系統整合異步解析 ─────────────────────────────────────────────
+  // ── 4. 系統入口檢查 ──────────────────────────────────────────────────
   async function resolveCourses() {
-    const isAca = location.hostname.includes('aca.ntu.edu.tw') || location.pathname.includes('coursetake2');
-    const isCourseNtu = location.hostname.includes('course.ntu.edu.tw');
-
-    if (!isAca && !isCourseNtu) {
-      alert('【臺大課程匯出工具】\n請在「臺大網路選課系統 (aca.ntu.edu.tw)」或「臺大課程網 (course.ntu.edu.tw)」登入後點擊此書籤！');
+    if (!location.hostname.includes('course.ntu.edu.tw')) {
+      alert('【臺大課程日曆好朋友】\n請在「臺大課程網 (course.ntu.edu.tw)」登入後點擊此書籤！\n支援頁面包含：\n- 選課結果課表 (/result/adddrop2/table 或 /result/prereg2/table)\n- 志願預選課表 (/priority/table)\n- 選課結果清單 (/result/adddrop2/list 等)');
       return null;
     }
 
-    // 模式 A：在正式網路選課系統
-    if (isAca) {
-      // 1. 若目前正在選課記錄 (mainscr)
-      if (location.pathname.includes('mainscr') || document.querySelector('table')?.textContent.includes('流水號')) {
-        const list = parseMainscrDoc(document);
-        if (list.length > 0) return { courses: list, source: '臺大正式選課系統 · 選課記錄' };
+    const courses = parseCourseNtuDoc(document);
+    if (courses.length > 0) {
+      let sourceName = '臺大課程網 · 課表';
+      if (location.pathname.includes('priority')) {
+        sourceName = '臺大課程網 · 志願預選課表';
+      } else if (location.pathname.includes('result')) {
+        sourceName = '臺大課程網 · 選課結果';
       }
-
-      // 2. 若目前在時間表 (cou-sched) 或其他選課系統子頁面，優先嘗試同源 fetch mainscr
-      try {
-        const search = location.search;
-        let mainscrUrl = '';
-        if (location.pathname.includes('cou-sched')) {
-          mainscrUrl = location.href.replace('cou-sched', 'mainscr');
-        } else {
-          mainscrUrl = new URL('../coutake/mainscr' + search, location.href).href;
-        }
-
-        const res = await fetch(mainscrUrl);
-        if (res.ok) {
-          const html = await res.text();
-          const doc = new DOMParser().parseFromString(html, 'text/html');
-          const list = parseMainscrDoc(doc);
-          if (list.length > 0) {
-            return { courses: list, source: '臺大正式選課系統 · 時間表同步' };
-          }
-        }
-      } catch (err) {
-        console.warn('Fetch mainscr error:', err);
-      }
-
-      // 3. Fallback: 直接解析 cou-sched 網格
-      const gridList = parseCouSchedDoc(document);
-      if (gridList.length > 0) {
-        return { courses: gridList, source: '臺大正式選課系統 · 時間表網格' };
-      }
-
-      alert('未能在選課系統中偵測到課表。請確認您已點選上方導覽列的「時間表」或「選課記錄」！');
-      return null;
+      return { courses, source: sourceName };
     }
 
-    // 模式 B：在課程網 (course.ntu.edu.tw)
-    const ntuList = parseCourseNtuDoc(document);
-    if (ntuList.length > 0) {
-      return { courses: ntuList, source: '臺大課程網 · 選課結果' };
-    }
-
-    alert('未在課程網中偵測到課程。請確認您在「選課結果」列表頁面 (https://course.ntu.edu.tw/result/prereg2/list)！');
+    alert('未在當前頁面偵測到課程！\n請確認您在臺大課程網的課表或結果頁面：\nhttps://course.ntu.edu.tw/result/adddrop2/table\n或 https://course.ntu.edu.tw/priority/table');
     return null;
   }
 
-  // ── 7. 背景抓取課程概述 (同源 course.ntu.edu.tw) ────────────────────────
-  async function fetchCourseDescriptions(courses, onProgress) {
+  // ── 5. 同源獲取課程介紹詳細資訊 (時間、地點、學分、教師、大綱) ──────
+  async function fetchCourseDetails(courses, onProgress, onCourseUpdated) {
     if (!location.hostname.includes('course.ntu.edu.tw')) return;
     let completed = 0;
 
     const fetchOne = async (course) => {
-      if (!course.url || course.description) {
+      if (!course.url) {
         completed++;
         onProgress(completed, courses.length);
         return;
@@ -518,7 +302,82 @@
           const doc = new DOMParser().parseFromString(html, 'text/html');
           const text = doc.body.innerText || '';
 
-          // 抓取課程概述與大綱
+          // 1. 授課教師 (支援多位教授、Lucide 圖標、搜尋連結與文字關鍵字)
+          const teacherMatches = [];
+          const mTeachers = html.matchAll(/lucide-user-round[\s\S]*?<div[^>]*class="[^"]*overflow-hidden[^"]*"[^>]*>([^<]+)<\/div>/g);
+          for (const mt of mTeachers) {
+            if (mt[1] && mt[1].trim()) teacherMatches.push(mt[1].trim());
+          }
+          if (teacherMatches.length === 0) {
+            const mTeachers2 = html.matchAll(/([^\s><]+)\s*搜尋教師開設的課程/g);
+            for (const mt of mTeachers2) {
+              if (mt[1] && mt[1].trim()) teacherMatches.push(mt[1].trim());
+            }
+          }
+          if (teacherMatches.length === 0) {
+            const teacherMatch = text.match(/授課教師[：:\s]*([^\n\r]+)/);
+            if (teacherMatch) teacherMatches.push(teacherMatch[1].trim().split(/[\s,，]+/)[0]);
+          }
+          if (teacherMatches.length > 0) {
+            course.instructor = [...new Set(teacherMatches)].join('、');
+          }
+
+          // 2. 教室與地點
+          const mMap = html.match(/lucide-map-pin[\s\S]*?<p[^>]*class="[^"]*text-balance[^"]*"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/) ||
+                     html.match(/lucide-map-pin[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
+          if (mMap && mMap[1].trim()) {
+            const loc = mMap[1].trim();
+            if (!loc.includes('未定') && !loc.includes('依系所')) course.locations = [loc];
+          } else {
+            const mMap2 = html.match(/maps\/search\/\?api=1&amp;query=[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
+            if (mMap2 && mMap2[1].trim()) {
+              const loc = mMap2[1].trim();
+              if (!loc.includes('未定') && !loc.includes('依系所')) course.locations = [loc];
+            } else {
+              const locMatch = text.match(/(?:上課教室|教室|地點)[：:\s]*([^\n\r,，。]+)/);
+              if (locMatch) {
+                const loc = locMatch[1].trim();
+                if (loc && !loc.includes('未定') && !loc.includes('依系所')) course.locations = [loc];
+              }
+            }
+          }
+
+          // 3. 上課時間與節次 (以課程介紹頁的時鐘圖標資訊為準)
+          const timeRegex = /lucide-clock[\s\S]*?<\/svg>\s*([一二三四五六日]\s*(?:10|[0-9A-Da-d])(?:[,，\s]*(?:10|[0-9A-Da-d]))*)/g;
+          const foundSlots = [];
+          let tm;
+          while ((tm = timeRegex.exec(html)) !== null) {
+            foundSlots.push(tm[1].replace(/\s+/g, ' ').trim());
+          }
+          if (foundSlots.length === 0) {
+            const timeRegex2 = /(?:上課時間|時間)[：:\s]*([一二三四五六日]\s*(?:10|[0-9A-Da-d])(?:[,，\s]*(?:10|[0-9A-Da-d]))*)/g;
+            let tm2;
+            while ((tm2 = timeRegex2.exec(text)) !== null) {
+              foundSlots.push(tm2[1].replace(/\s+/g, ' ').trim());
+            }
+          }
+          if (foundSlots.length > 0) {
+            course.timeSlots = [...new Set(foundSlots)];
+          }
+
+          // 4. 學分
+          const mCredits = html.match(/lucide-hand-coins[\s\S]*?<\/svg>\s*(\d+(?:\.\d+)?)\s*學分/);
+          if (mCredits) {
+            course.credits = parseFloat(mCredits[1]);
+          } else {
+            const credMatch = text.match(/(\d+(?:\.\d+)?)\s*學分/);
+            if (credMatch) course.credits = parseFloat(credMatch[1]);
+          }
+
+          // 5. 流水號、課號、課程識別碼
+          const mSerial = html.match(/流水號[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
+          if (mSerial) course.serial = mSerial[1].trim();
+          const mCode = html.match(/課號[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
+          if (mCode) course.code = mCode[1].trim();
+          const mId = html.match(/課程識別碼[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
+          if (mId) course.identifier = mId[1].trim();
+
+          // 6. 課程概述
           const descMatch = html.match(/課程概述[\s\S]*?<div[^>]*class="[^"]*prose[^"]*"[^>]*>([\s\S]*?)<\/div>/);
           if (descMatch) {
             course.description = descMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
@@ -526,6 +385,8 @@
             const match = text.match(/課程概述[：:\s]*([\s\S]*?)(?:課程目標|課程大綱|評量方式|指定閱讀|$)/);
             if (match && match[1].trim()) course.description = match[1].trim().slice(0, 400);
           }
+
+          if (onCourseUpdated) onCourseUpdated(course);
         }
       } catch (e) {
         // silent
@@ -534,7 +395,7 @@
       onProgress(completed, courses.length);
     };
 
-    // 平行發出請求抓取課程大綱
+    // 平行非同步獲取所有選中課程詳細介紹
     await Promise.all(courses.map(c => fetchOne(c)));
   }
 
@@ -635,6 +496,12 @@
         padding: 2px 6px; border-radius: 4px;
       }
       .ntu-item-teacher { font-size: 12px; color: #64748b; font-weight: 500; }
+      .ntu-link-btn {
+        margin-left: auto; font-size: 11.5px; color: #4f46e5; text-decoration: none;
+        background: #eef2ff; padding: 2px 8px; border-radius: 6px; font-weight: 600;
+        transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+      }
+      .ntu-link-btn:hover { background: #e0e7ff; text-decoration: underline; color: #3730a3; }
       .ntu-item-meta {
         font-size: 12px; color: #64748b; display: flex; gap: 12px; align-items: center;
       }
@@ -688,7 +555,7 @@
           <div class="ntu-box">
             <div class="ntu-box-title">
               <span>📅 學期設定 · <small style="color:#4f46e5;font-weight:600">${sourceName}</small></span>
-              <span class="ntu-desc-status" id="ntu-desc-status">⚡ 課表就緒</span>
+              <span class="ntu-desc-status" id="ntu-desc-status">⏳ 正在同步課程詳細中...</span>
             </div>
             <div class="ntu-grid-2">
               <div>
@@ -723,10 +590,12 @@
                     <span class="ntu-item-name">${c.name}</span>
                     <span class="ntu-tag-enrolled">已選上</span>
                     ${c.instructor ? `<span class="ntu-item-teacher">${c.instructor}</span>` : ''}
+                    ${c.url ? `<a href="${c.url}" target="_blank" onclick="event.stopPropagation();" class="ntu-link-btn" title="查看課程介紹與大綱">🔗 課程介紹</a>` : ''}
                   </div>
                   <div class="ntu-item-meta">
-                    <span>⏰ ${c.timeSlots.join(', ')}</span>
-                    ${c.locations.length ? `<span class="ntu-loc-tag">📍 ${c.locations.join('、')}</span>` : '<span style="color:#94a3b8">📍 依系所公告</span>'}
+                    <span>⏰ ${c.timeSlots && c.timeSlots.length ? c.timeSlots.join('、') : '時間同步中...'}</span>
+                    ${c.locations && c.locations.length ? `<span class="ntu-loc-tag">📍 ${c.locations.join('、')}</span>` : '<span style="color:#94a3b8">📍 依系所公告</span>'}
+                    ${c.credits ? `<span style="color:#4f46e5;font-weight:600;font-size:11.5px">${c.credits} 學分</span>` : ''}
                     ${c.serial ? `<span style="color:#94a3b8;font-size:11.5px">#${c.serial}</span>` : ''}
                   </div>
                 </div>
@@ -752,10 +621,12 @@
                     <span class="ntu-item-name">${c.name}</span>
                     <span class="ntu-tag-wait">待分發</span>
                     ${c.instructor ? `<span class="ntu-item-teacher">${c.instructor}</span>` : ''}
+                    ${c.url ? `<a href="${c.url}" target="_blank" onclick="event.stopPropagation();" class="ntu-link-btn" title="查看課程介紹與大綱">🔗 課程介紹</a>` : ''}
                   </div>
                   <div class="ntu-item-meta">
-                    <span>⏰ ${c.timeSlots.join(', ')}</span>
-                    ${c.locations.length ? `<span class="ntu-loc-tag">📍 ${c.locations.join('、')}</span>` : '<span style="color:#94a3b8">📍 依系所公告</span>'}
+                    <span>⏰ ${c.timeSlots && c.timeSlots.length ? c.timeSlots.join('、') : '時間同步中...'}</span>
+                    ${c.locations && c.locations.length ? `<span class="ntu-loc-tag">📍 ${c.locations.join('、')}</span>` : '<span style="color:#94a3b8">📍 依系所公告</span>'}
+                    ${c.credits ? `<span style="color:#4f46e5;font-weight:600;font-size:11.5px">${c.credits} 學分</span>` : ''}
                     ${c.serial ? `<span style="color:#94a3b8;font-size:11.5px">#${c.serial}</span>` : ''}
                   </div>
                 </div>
@@ -783,6 +654,38 @@
     `;
     document.body.appendChild(overlay);
 
+    // 動態即時更新彈窗中的課程卡片
+    function updateOverlayItem(course) {
+      const item = overlay.querySelector(`.ntu-item[data-id="${course.id}"]`);
+      if (!item) return;
+
+      if (course.instructor) {
+        let teacherEl = item.querySelector('.ntu-item-teacher');
+        if (teacherEl) {
+          teacherEl.textContent = course.instructor;
+        } else {
+          const topDiv = item.querySelector('.ntu-item-top');
+          if (topDiv) {
+            teacherEl = document.createElement('span');
+            teacherEl.className = 'ntu-item-teacher';
+            teacherEl.textContent = course.instructor;
+            const linkBtn = topDiv.querySelector('.ntu-link-btn');
+            if (linkBtn) topDiv.insertBefore(teacherEl, linkBtn);
+            else topDiv.appendChild(teacherEl);
+          }
+        }
+      }
+
+      const metaEl = item.querySelector('.ntu-item-meta');
+      if (metaEl) {
+        const timeStr = (course.timeSlots && course.timeSlots.length) ? course.timeSlots.join('、') : '時間未定';
+        const locStr = (course.locations && course.locations.length) ? `<span class="ntu-loc-tag">📍 ${course.locations.join('、')}</span>` : '<span style="color:#94a3b8">📍 依系所公告</span>';
+        const credStr = course.credits ? `<span style="color:#4f46e5;font-weight:600;font-size:11.5px">${course.credits} 學分</span>` : '';
+        const serialStr = course.serial ? `<span style="color:#94a3b8;font-size:11.5px">#${course.serial}</span>` : '';
+        metaEl.innerHTML = `<span>⏰ ${timeStr}</span> ${locStr} ${credStr} ${serialStr}`;
+      }
+    }
+
     const updateCount = () => {
       const selectedCount = overlay.querySelectorAll('.ntu-checkbox:checked').length;
       document.getElementById('ntu-count-label').textContent = `已選擇 ${selectedCount} / ${courses.length} 堂課`;
@@ -790,7 +693,7 @@
 
     overlay.querySelectorAll('.ntu-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.tagName === 'INPUT') return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
         const chk = item.querySelector('.ntu-checkbox');
         chk.checked = !chk.checked;
         item.classList.toggle('active', chk.checked);
@@ -921,12 +824,12 @@
 
     if (location.hostname.includes('course.ntu.edu.tw')) {
       const statusLabel = document.getElementById('ntu-desc-status');
-      statusLabel.textContent = '⏳ 抓取大綱中...';
-      fetchCourseDescriptions(courses, (done, total) => {
+      statusLabel.textContent = '⏳ 同步課程資訊中...';
+      fetchCourseDetails(courses, (done, total) => {
         if (statusLabel) {
-          statusLabel.textContent = done === total ? '✨ 大綱已包含' : `⏳ 載入大綱 (${done}/${total})`;
+          statusLabel.textContent = done === total ? '✨ 詳細資料已同步' : `⏳ 同步中 (${done}/${total})`;
         }
-      });
+      }, updateOverlayItem);
     }
   }
 
