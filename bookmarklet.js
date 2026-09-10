@@ -500,45 +500,13 @@
     return null;
   }
 
-  // ── 7. 背景抓取課程概述與詳細資訊 (同源 course.ntu.edu.tw) ────────────────────────
-  function updateOverlayItem(course) {
-    const item = document.querySelector(`.ntu-item[data-id="${course.id}"]`);
-    if (!item) return;
-
-    // 1. 更新教師標籤
-    if (course.instructor) {
-      let teacherEl = item.querySelector('.ntu-item-teacher');
-      if (teacherEl) {
-        teacherEl.textContent = course.instructor;
-      } else {
-        const topDiv = item.querySelector('.ntu-item-top');
-        if (topDiv) {
-          teacherEl = document.createElement('span');
-          teacherEl.className = 'ntu-item-teacher';
-          teacherEl.textContent = course.instructor;
-          topDiv.appendChild(teacherEl);
-        }
-      }
-    }
-
-    // 2. 更新元資訊（時間、地點、學分、流水號）
-    const metaEl = item.querySelector('.ntu-item-meta');
-    if (metaEl) {
-      metaEl.innerHTML = `
-        <span>⏰ ${course.timeSlots && course.timeSlots.length ? course.timeSlots.join('、') : '時間未定'}</span>
-        ${course.locations && course.locations.length ? `<span class="ntu-loc-tag">📍 ${course.locations.join('、')}</span>` : '<span style="color:#94a3b8">📍 依系所公告</span>'}
-        ${course.credits ? `<span style="color:#4f46e5;font-weight:600;font-size:11.5px">${course.credits} 學分</span>` : ''}
-        ${course.serial ? `<span style="color:#94a3b8;font-size:11.5px">#${course.serial}</span>` : ''}
-      `;
-    }
-  }
-
+  // ── 7. 背景抓取課程概述 (同源 course.ntu.edu.tw) ────────────────────────
   async function fetchCourseDescriptions(courses, onProgress) {
     if (!location.hostname.includes('course.ntu.edu.tw')) return;
     let completed = 0;
 
     const fetchOne = async (course) => {
-      if (!course.url) {
+      if (!course.url || course.description) {
         completed++;
         onProgress(completed, courses.length);
         return;
@@ -550,68 +518,7 @@
           const doc = new DOMParser().parseFromString(html, 'text/html');
           const text = doc.body.innerText || '';
 
-          // 1. 授課教師 (支援 Lucide 圖標結構與關鍵字文字結構)
-          const mTeacher = html.match(/lucide-user-round[\s\S]*?<div[^>]*class="[^"]*overflow-hidden[^"]*"[^>]*>([^<]+)<\/div>/);
-          if (mTeacher && mTeacher[1].trim()) {
-            course.instructor = mTeacher[1].trim();
-          } else {
-            const mTeacher2 = html.match(/([^\s><]+)\s*搜尋教師開設的課程/);
-            if (mTeacher2 && mTeacher2[1].trim()) {
-              course.instructor = mTeacher2[1].trim();
-            } else {
-              const teacherMatch = text.match(/授課教師[：:\s]*([^\n\r]+)/);
-              if (teacherMatch) course.instructor = teacherMatch[1].trim().split(/[\s,，]+/)[0];
-            }
-          }
-
-          // 2. 教室與地點
-          const mMap = html.match(/lucide-map-pin[\s\S]*?<p[^>]*class="[^"]*text-balance[^"]*"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
-          if (mMap && mMap[1].trim()) {
-            const loc = mMap[1].trim();
-            if (!loc.includes('未定')) course.locations = [loc];
-          } else {
-            const mMap2 = html.match(/maps\/search\/\?api=1&amp;query=[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
-            if (mMap2 && mMap2[1].trim()) {
-              const loc = mMap2[1].trim();
-              if (!loc.includes('未定')) course.locations = [loc];
-            } else {
-              const locMatch = text.match(/(?:上課教室|教室|地點)[：:\s]*([^\n\r,，。]+)/);
-              if (locMatch) {
-                const loc = locMatch[1].trim();
-                if (loc && !loc.includes('未定') && !loc.includes('依系所')) course.locations = [loc];
-              }
-            }
-          }
-
-          // 3. 上課時間與節次 (以課程詳情頁的 lucide-clock 為權威精確資料)
-          const timeRegex = /lucide-clock[\s\S]*?<\/svg>\s*([一二三四五六日]\s*(?:10|[0-9A-Da-d])(?:[,，\s]*(?:10|[0-9A-Da-d]))*)/g;
-          const foundSlots = [];
-          let tm;
-          while ((tm = timeRegex.exec(html)) !== null) {
-            foundSlots.push(tm[1].replace(/\s+/g, ' ').trim());
-          }
-          if (foundSlots.length > 0) {
-            course.timeSlots = [...new Set(foundSlots)];
-          }
-
-          // 4. 學分
-          const mCredits = html.match(/lucide-hand-coins[\s\S]*?<\/svg>\s*(\d+(?:\.\d+)?)\s*學分/);
-          if (mCredits) {
-            course.credits = parseFloat(mCredits[1]);
-          } else {
-            const credMatch = text.match(/(\d+(?:\.\d+)?)\s*學分/);
-            if (credMatch) course.credits = parseFloat(credMatch[1]);
-          }
-
-          // 5. 流水號、課號、課程識別碼
-          const mSerial = html.match(/流水號[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
-          if (mSerial) course.serial = mSerial[1].trim();
-          const mCode = html.match(/課號[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
-          if (mCode) course.code = mCode[1].trim();
-          const mId = html.match(/課程識別碼[\s\S]*?<p[^>]*class="[^"]*select-all[^"]*"[^>]*>([^<]+)<\/p>/);
-          if (mId) course.identifier = mId[1].trim();
-
-          // 6. 課程概述
+          // 抓取課程概述與大綱
           const descMatch = html.match(/課程概述[\s\S]*?<div[^>]*class="[^"]*prose[^"]*"[^>]*>([\s\S]*?)<\/div>/);
           if (descMatch) {
             course.description = descMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 400);
@@ -619,9 +526,6 @@
             const match = text.match(/課程概述[：:\s]*([\s\S]*?)(?:課程目標|課程大綱|評量方式|指定閱讀|$)/);
             if (match && match[1].trim()) course.description = match[1].trim().slice(0, 400);
           }
-
-          // 7. 即時更新已開啟的彈窗 DOM
-          updateOverlayItem(course);
         }
       } catch (e) {
         // silent
@@ -630,7 +534,7 @@
       onProgress(completed, courses.length);
     };
 
-    // 平行發出請求 (瀏覽器並行度高，幾百毫秒內即可完成所有課程詳細頁面)
+    // 平行發出請求抓取課程大綱
     await Promise.all(courses.map(c => fetchOne(c)));
   }
 
