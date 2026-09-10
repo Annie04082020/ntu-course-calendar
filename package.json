@@ -1,0 +1,22 @@
+{
+  "name": "ntu-course-calendar",
+  "version": "1.0.0",
+  "description": "臺大課程網 → Google 日曆 ICS 一鍵匯出工具 (NTU Course to Calendar)",
+  "main": "bookmarklet.js",
+  "scripts": {
+    "build:bookmarklet": "node build_bookmarklet.js",
+    "build:html": "node generate_index.js",
+    "build": "node build_bookmarklet.js && node generate_index.js",
+    "test": "node test_quotes.js"
+  },
+  "keywords": [
+    "ntu",
+    "course",
+    "calendar",
+    "google-calendar",
+    "bookmarklet",
+    "ics"
+  ],
+  "author": "",
+  "license": "MIT"
+}
