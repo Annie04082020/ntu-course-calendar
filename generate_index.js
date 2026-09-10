@@ -207,6 +207,59 @@ const html = `<!DOCTYPE html>
         </div>
       </div>
     </div>
+  <!-- Export to ICS Settings Modal -->
+  <div class="modal-backdrop" id="modal-export-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">📅 匯出至 Google 日曆 (.ics)</div>
+        <button class="modal-close" id="export-close" aria-label="關閉">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin-bottom: 14px;">
+          設定學期開學日與總週數，生成標準 iCalendar (.ics) 格式，可直接匯入至 Google 日曆、Apple 行事曆或 Outlook。
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">
+              開學日期 (週一)
+            </label>
+            <input type="date" id="exp-start-date" value="2026-09-07" style="width:100%; box-sizing:border-box; padding:9px 12px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); font-family:inherit; font-size:13.5px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">
+              總週數 (台大現制 16 週)
+            </label>
+            <input type="number" id="exp-weeks-count" value="16" min="1" max="25" style="width:100%; box-sizing:border-box; padding:9px 12px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); font-family:inherit; font-size:13.5px;">
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+          <input type="checkbox" id="exp-mark-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer; width:16px; height:16px;">
+          <label for="exp-mark-waitlist" style="font-size:13px; color:var(--text-secondary); cursor:pointer;">
+            未選上志願課程標題加上 <strong style="color:var(--status-waitlist)">[候補]</strong> 標記
+          </label>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:18px;">
+          <div style="font-size:12.5px; font-weight:600; color:var(--text-secondary); margin-bottom:8px; display:flex; justify-content:space-between;">
+            <span>即將匯出課程清單</span>
+            <span id="exp-courses-count" style="color:var(--accent-primary)">已勾選 0 門課</span>
+          </div>
+          <div id="exp-courses-preview" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; font-size:12.5px;">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="filter-pill" id="btn-cancel-export">取消</button>
+          <button class="btn-nav-primary" id="btn-confirm-export">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            確認下載日曆 (.ics)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Floating Toast Notification -->
@@ -240,6 +293,37 @@ const html = `<!DOCTYPE html>
     const WEEKDAY_OFFSET = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0 };
 
     const COLOR_CLASSES = ['c-indigo', 'c-emerald', 'c-cyan', 'c-violet', 'c-rose', 'c-amber', 'c-blue'];
+
+    // 課名標題純淨化：移除課號與流水號
+    function cleanCourseTitle(rawName, code, serial, identifier) {
+      let name = (rawName || '').trim();
+      if (!name) return '';
+
+      const removeLiteral = (val) => {
+        if (!val || typeof val !== 'string') return;
+        const trimmed = val.trim();
+        const esc = trimmed.replace(new RegExp('[.*+?^' + '\\\\$' + '{\\\\}()|[\\\\\\]\\\\\\\\]', 'g'), '\\\\$&');
+        name = name.replace(new RegExp('^[\\\\(\\\\[（【]?\\\\s*' + esc + '\\\\s*[\\\\)\\\\]）】]?\\\\s*[-:：_—]?\\\\s*', 'gi'), '');
+        name = name.replace(new RegExp('\\\\s*[\\\\(\\\\[（【]?\\\\s*' + esc + '\\\\s*[\\\\)\\\\]）】]?\\\\s*$', 'gi'), '');
+        name = name.replace(new RegExp('[\\\\(\\\\[（【]\\\\s*' + esc + '\\\\s*[\\\\)\\\\]）】]', 'gi'), '');
+        name = name.replace(new RegExp('\\\\b' + esc + '\\\\b', 'gi'), '');
+      };
+
+      removeLiteral(code);
+      removeLiteral(serial);
+      removeLiteral(identifier);
+
+      // 去除常見課號格式 (如 EE5184, CSIE1210, EduTch5104)
+      name = name.replace(/^[\\\\(\\\\[（【]?\\s*[A-Za-z]{2,8}\\s*\\d{3,5}\\s*[\\\\)\\\\]）】]?\\s*[-:：_—]?\\s*/g, '');
+      name = name.replace(/\\s*[\\\\(\\\\[（【]\\s*[A-Za-z]{2,8}\\s*\\d{3,5}\\s*[\\\\)\\\\]）】]\\s*$/g, '');
+
+      // 去除常見 4~6 碼流水號 (如 13707, 10359)
+      name = name.replace(/^[\\\\(\\\\[（【]?\\s*\\d{4,6}\\s*[\\\\)\\\\]）】]?\\s*[-:：_—]?\\s*/g, '');
+      name = name.replace(/\\s*[\\\\(\\\\[（【]\\s*\\d{4,6}\\s*[\\\\)\\\\]）】]\\s*$/g, '');
+
+      name = name.replace(/\\s+/g, ' ').trim();
+      return name || rawName.trim();
+    }
 
     // =========================================================================
     // 示範通用課表資料 (不含任何真實個人資料)
@@ -700,15 +784,46 @@ const html = `<!DOCTYPE html>
     // =========================================================================
     // RFC 5545 iCalendar (.ics) 純前端生成器
     // =========================================================================
-    function exportToICS(selectedCourses) {
+    function foldLine(str) {
+      if (!str) return '';
+      const lines = [];
+      let current = '';
+      let currentBytes = 0;
+      for (const ch of str) {
+        const code = ch.codePointAt(0);
+        let bytes = 1;
+        if (code > 0x7ff) bytes = 3;
+        else if (code > 0x7f) bytes = 2;
+        if (code > 0xffff) bytes = 4;
+        const limit = (lines.length === 0) ? 75 : 74;
+        if (currentBytes + bytes > limit) {
+          lines.push(current);
+          current = ' ' + ch;
+          currentBytes = 1 + bytes;
+        } else {
+          current += ch;
+          currentBytes += bytes;
+        }
+      }
+      if (current) lines.push(current);
+      return lines.join('\\r\\n');
+    }
+
+    function exportToICS(selectedCourses, customStartDate, customWeeks, markWaitlist = true) {
       if (!selectedCourses || selectedCourses.length === 0) {
         alert('請至少勾選一門課程！');
         return;
       }
 
-      // 開學日：2026-09-07 (台大 115-1 預設開學日)
-      const semStart = new Date(2026, 8, 7, 0, 0, 0);
-      const totalWeeks = 16;
+      // 開學日：支援自訂或預設 2026-09-07 (台大 115-1 開學日)
+      let semStart;
+      if (customStartDate) {
+        const [y, m, d] = customStartDate.split('-').map(Number);
+        semStart = new Date(y, m - 1, d, 0, 0, 0);
+      } else {
+        semStart = new Date(2026, 8, 7, 0, 0, 0);
+      }
+      const totalWeeks = (customWeeks && customWeeks > 0) ? customWeeks : 16;
 
       const pad = (n) => String(n).padStart(2, '0');
       const formatICSDate = (d) => {
@@ -746,7 +861,7 @@ const html = `<!DOCTYPE html>
         const slots = c.timeSlots || [];
         slots.forEach(slotStr => {
           const groups = parseSlotGroups(slotStr);
-          groups.forEach((g, gIdx) => {
+          groups.forEach((g) => {
             const byDay = WEEKDAY_RRULE[g.weekday];
             const offset = WEEKDAY_OFFSET[g.weekday];
             if (!byDay || offset === undefined) return;
@@ -757,15 +872,19 @@ const html = `<!DOCTYPE html>
             const endDef = PERIOD_DEFS[lastP];
             if (!startDef || !endDef) return;
 
-            // 計算第一週該星期幾的日期
+            // 計算第一週該星期幾的日期 (安全日曆相加，保證不遺漏第 1 週)
             const semDay = semStart.getDay(); // 0 is Sun, 1 is Mon
-            const diffDays = (offset - semDay + 7) % 7;
-            const eventDate = new Date(semStart.getTime() + diffDays * 86400000);
+            let diff = offset - semDay;
+            if (diff < 0) diff += 7;
+            const eventDate = new Date(semStart);
+            eventDate.setDate(eventDate.getDate() + diff);
 
             const dtStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), startDef.start[0], startDef.start[1], 0);
             const dtEnd = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), endDef.end[0], endDef.end[1], 0);
 
-            const summary = (c.isEnrolled ? '' : '[候補] ') + c.name;
+            // 標題純淨化：絕不包含課號與流水號
+            const cleanName = cleanCourseTitle(c.name, c.code, c.serial, c.identifier);
+            const summary = (markWaitlist && !c.isEnrolled ? '[候補] ' : '') + cleanName;
             const location = (c.locations && c.locations.length > 0) ? c.locations.join('、') : '依系所公告';
 
             let desc = \`【選課狀態】：\${c.isEnrolled ? '已選上' : '志願分發候補'}\\n\` +
@@ -778,17 +897,17 @@ const html = `<!DOCTYPE html>
               (c.description ? \`\\n【課程概述】\\n\${c.description}\\n\` : '') +
               (c.url ? \`\\n課程網址：\${c.url}\` : '');
 
-            const uid = \`ntu-\${c.serial || c.code || Math.random().toString(36).substr(2)}-\${g.weekday}\${firstP}@course.ntu.edu.tw\`;
+            const uid = \`ntu-\${Date.now()}-\${Math.random().toString(36).slice(2, 9)}@course.ntu.edu.tw\`;
 
             lines.push('BEGIN:VEVENT');
-            lines.push(\`UID:\${uid}\`);
+            lines.push(foldLine(\`UID:\${uid}\`));
             lines.push(\`DTSTART;TZID=Asia/Taipei:\${formatICSDate(dtStart)}\`);
             lines.push(\`DTEND;TZID=Asia/Taipei:\${formatICSDate(dtEnd)}\`);
             lines.push(\`RRULE:FREQ=WEEKLY;BYDAY=\${byDay};COUNT=\${totalWeeks}\`);
-            lines.push(\`SUMMARY:\${escapeICS(summary)}\`);
-            lines.push(\`LOCATION:\${escapeICS(location)}\`);
-            lines.push(\`DESCRIPTION:\${escapeICS(desc)}\`);
-            if (c.url) lines.push(\`URL:\${c.url}\`);
+            lines.push(foldLine(\`SUMMARY:\${escapeICS(summary)}\`));
+            lines.push(foldLine(\`LOCATION:\${escapeICS(location)}\`));
+            lines.push(foldLine(\`DESCRIPTION:\${escapeICS(desc)}\`));
+            if (c.url) lines.push(foldLine(\`URL:\${c.url}\`));
             lines.push('STATUS:CONFIRMED');
             lines.push('END:VEVENT');
           });
@@ -920,13 +1039,58 @@ const html = `<!DOCTYPE html>
       renderSidebar();
     });
 
-    // Download handlers
-    function triggerDownload() {
+    // Export Modal & Download handlers
+    function openExportModal() {
       const selected = courses.filter(c => selectedCourseIds.has(c.id));
-      exportToICS(selected);
+      if (!selected || selected.length === 0) {
+        alert('請先在左側勾選至少一門要匯出的課程！');
+        return;
+      }
+
+      // 更新即將匯出的課程數量與預覽清單
+      const countEl = document.getElementById('exp-courses-count');
+      const previewEl = document.getElementById('exp-courses-preview');
+      countEl.textContent = \`已勾選 \${selected.length} 門課\`;
+
+      previewEl.innerHTML = selected.map(c => \`
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px;">
+          <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <span style="font-size:11px; padding:1px 5px; border-radius:3px; \${c.isEnrolled ? 'background:rgba(16,185,129,0.15); color:var(--accent-primary);' : 'background:rgba(245,158,11,0.15); color:var(--status-waitlist);'}">\${c.isEnrolled ? '正選' : '候補'}</span>
+            <span style="font-weight:600; color:var(--text-primary);">\${escapeHtml(cleanCourseTitle(c.name, c.code, c.serial, c.identifier))}</span>
+            \${c.instructor ? \`<span style="color:var(--text-muted); font-size:11.5px;">(\${escapeHtml(c.instructor)})</span>\` : ''}
+          </div>
+          <div style="color:var(--text-secondary); font-size:11.5px; font-variant-numeric:tabular-nums; white-space:nowrap; margin-left:8px;">
+            \${escapeHtml((c.timeSlots || []).join(', ') || '無節次')}
+          </div>
+        </div>
+      \`).join('');
+
+      const modal = document.getElementById('modal-export-backdrop');
+      modal.classList.add('open');
+      modal.classList.add('show');
     }
-    document.getElementById('btn-sidebar-dl').addEventListener('click', triggerDownload);
-    document.getElementById('btn-nav-quick-dl').addEventListener('click', triggerDownload);
+
+    document.getElementById('btn-sidebar-dl').addEventListener('click', openExportModal);
+    document.getElementById('btn-nav-quick-dl').addEventListener('click', openExportModal);
+
+    document.getElementById('btn-confirm-export').addEventListener('click', () => {
+      const selected = courses.filter(c => selectedCourseIds.has(c.id));
+      const startDate = document.getElementById('exp-start-date').value;
+      const weeks = parseInt(document.getElementById('exp-weeks-count').value, 10) || 16;
+      const markWaitlist = document.getElementById('exp-mark-waitlist').checked;
+
+      exportToICS(selected, startDate, weeks, markWaitlist);
+
+      const modal = document.getElementById('modal-export-backdrop');
+      modal.classList.remove('open');
+      modal.classList.remove('show');
+    });
+
+    document.getElementById('btn-cancel-export').addEventListener('click', () => {
+      const modal = document.getElementById('modal-export-backdrop');
+      modal.classList.remove('open');
+      modal.classList.remove('show');
+    });
 
     // Reset / Toggle demo
     document.getElementById('btn-reset-data').addEventListener('click', () => {
@@ -962,6 +1126,7 @@ const html = `<!DOCTYPE html>
 
     bindModal('btn-open-bm-modal', 'modal-bm-backdrop', 'bm-close');
     bindModal('btn-open-import-modal', 'modal-import-backdrop', 'import-close');
+    bindModal(null, 'modal-export-backdrop', 'export-close');
     bindModal(null, 'modal-detail-backdrop', 'md-close');
 
     // Manual Import submission

@@ -73,14 +73,28 @@ function formatICSDateTime(date, hour, minute) {
 }
 
 function foldLine(str) {
-  if (str.length <= 75) return str;
-  const parts = [str.slice(0, 75)];
-  let i = 75;
-  while (i < str.length) {
-    parts.push(' ' + str.slice(i, i + 74));
-    i += 74;
+  if (!str) return '';
+  const lines = [];
+  let current = '';
+  let currentBytes = 0;
+  for (const ch of str) {
+    const code = ch.codePointAt(0);
+    let bytes = 1;
+    if (code > 0x7ff) bytes = 3;
+    else if (code > 0x7f) bytes = 2;
+    if (code > 0xffff) bytes = 4;
+    const limit = (lines.length === 0) ? 75 : 74;
+    if (currentBytes + bytes > limit) {
+      lines.push(current);
+      current = ' ' + ch;
+      currentBytes = 1 + bytes;
+    } else {
+      current += ch;
+      currentBytes += bytes;
+    }
   }
-  return parts.join('\r\n');
+  if (current) lines.push(current);
+  return lines.join('\r\n');
 }
 
 function escapeICS(str) {
@@ -89,6 +103,34 @@ function escapeICS(str) {
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
     .replace(/\r?\n/g, '\\n');
+}
+
+function cleanCourseTitle(rawName, code, serial, identifier) {
+  let name = (rawName || '').trim();
+  if (!name) return '';
+
+  const removeLiteral = (val) => {
+    if (!val || typeof val !== 'string') return;
+    const trimmed = val.trim();
+    if (!trimmed || trimmed.length < 2) return;
+    const esc = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    name = name.replace(new RegExp('^[\\(\\[（【]?\\s*' + esc + '\\s*[\\)\\]）】]?\\s*[-:：_—]?\\s*', 'gi'), '');
+    name = name.replace(new RegExp('\\s*[\\(\\[（【]?\\s*' + esc + '\\s*[\\)\\]）】]?\\s*$', 'gi'), '');
+    name = name.replace(new RegExp('[\\(\\[（【]\\s*' + esc + '\\s*[\\)\\]）】]', 'gi'), '');
+    name = name.replace(new RegExp('\\b' + esc + '\\b', 'gi'), '');
+  };
+
+  removeLiteral(code);
+  removeLiteral(serial);
+  removeLiteral(identifier);
+
+  name = name.replace(/^[\\(\\[（【]?\s*[A-Za-z]{2,8}\s*\d{3,5}\s*[\\)\\]）】]?\s*[-:：_—]?\s*/g, '');
+  name = name.replace(/\s*[\\(\\[（【]\s*[A-Za-z]{2,8}\s*\d{3,5}\s*[\\)\\]）】]\s*$/g, '');
+  name = name.replace(/^[\\(\\[（【]?\s*\d{4,6}\s*[\\)\\]）】]?\s*[-:：_—]?\s*/g, '');
+  name = name.replace(/\s*[\\(\\[（【]\s*\d{4,6}\s*[\\)\\]）】]\s*$/g, '');
+
+  name = name.replace(/\s+/g, ' ').trim();
+  return name || rawName.trim();
 }
 
 function generateICS(courses, semesterStart, totalWeeks, calTitle = '臺大課程表 115-1') {
@@ -140,11 +182,13 @@ function generateICS(courses, semesterStart, totalWeeks, calTitle = '臺大課�
         descParts.push('\n課程網址：' + course.url);
 
         const locationText = course.locations.join('、') || '未定 / 依課程公告';
-        const summaryText = (course.isEnrolled === false ? '[候補] ' : '') + course.name;
+        const cleanName = cleanCourseTitle(course.name, course.code, course.serial, course.identifier);
+        const summaryText = (course.isEnrolled === false ? '[候補] ' : '') + cleanName;
 
+        const uid = 'ntu-' + (course.serial || 'course') + '-' + (WEEKDAY_RRULE[group.weekday] || 'D') + group.startPeriod + '-' + Math.random().toString(36).slice(2, 9) + '@course.ntu.edu.tw';
         lines.push(
           'BEGIN:VEVENT',
-          foldLine('UID:ntu-' + course.serial + '-' + group.weekday + group.startPeriod + '@course.ntu.edu.tw'),
+          foldLine('UID:' + uid),
           'DTSTART;TZID=Asia/Taipei:' + dtStart,
           'DTEND;TZID=Asia/Taipei:' + dtEnd,
           'RRULE:FREQ=WEEKLY;BYDAY=' + WEEKDAY_RRULE[group.weekday] + ';COUNT=' + totalWeeks,
