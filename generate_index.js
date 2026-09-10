@@ -364,11 +364,20 @@ const html = `<!DOCTYPE html>
 
     // 格式化解析節次連續區間
     function parseSlotGroups(slotStr) {
+      if (!slotStr) return [];
       const clean = slotStr.replace(/\\s+/g, '');
       const match = clean.match(/^([一二三四五六日])([\\d,ABCDabcd]+)$/i);
       if (!match) return [];
       const weekday = match[1];
-      const periodList = match[2].split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
+      let periodList = [];
+      if (match[2].includes(',')) {
+        periodList = match[2].split(',').map(p => p.trim().toUpperCase()).filter(Boolean);
+      } else {
+        const found = match[2].match(/10|[0-9A-Za-z]/g) || [];
+        periodList = found.map(p => p.toUpperCase());
+      }
+      // 防呆正規化：去除個位數補零 (例如 02 -> 2, 09 -> 9)，但保留 0 與 10
+      periodList = periodList.map(p => p.replace(/^0+([1-9])/, '$1'));
 
       const groups = [];
       let currentGroup = [];
