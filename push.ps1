@@ -82,5 +82,6 @@ if (Test-Path (Join-Path $ScriptDir ".git")) {
 }
 
 Write-Host "==================================================" -ForegroundColor Green
-Write-Host "🎉 推送完成！已同步至 $RemoteUrl" -ForegroundColor Green
+Write-Host "Sync completed successfully: $RemoteUrl" -ForegroundColor Green
 Write-Host "==================================================" -ForegroundColor Green
+
