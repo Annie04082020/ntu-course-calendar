@@ -31,18 +31,18 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.9'
 
       - name: Build Release APK
         working-directory: android
         run: |
-          chmod +x gradlew || true
-          gradle wrapper
-          ./gradlew assembleRelease --stacktrace
+          gradle assembleRelease --stacktrace
 
       - name: Rename APK
         run: |
           mkdir -p output
-          cp android/app/build/outputs/apk/release/app-release.apk output/NTU-Course-Calendar-Widget.apk
+          find android/app/build/outputs/apk/ -name "*.apk" -exec cp {} output/NTU-Course-Calendar-Widget.apk \;
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
