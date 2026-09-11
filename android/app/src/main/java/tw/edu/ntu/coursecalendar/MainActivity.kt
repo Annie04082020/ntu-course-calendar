@@ -115,10 +115,16 @@ fun MainScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("臺大課表好朋友", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        SuggestionChip(
-                            onClick = {},
-                            label = { Text(if (isDemo) "示範模式" else "個人課表", fontSize = 11.sp) }
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = if (isDemo) "示範模式" else "個人課表",
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -273,14 +279,19 @@ fun MainScreen(
                                         fontSize = 15.sp,
                                         modifier = Modifier.weight(1f)
                                     )
-                                    Badge(
-                                        containerColor = if (course.isEnrolled) Color(0xFF10B981) else Color(0xFFF59E0B)
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                if (course.isEnrolled) Color(0xFF10B981) else Color(0xFFF59E0B),
+                                                RoundedCornerShape(4.dp)
+                                            )
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
                                         Text(
-                                            if (course.isEnrolled) "正選" else "候補",
+                                            text = if (course.isEnrolled) "正選" else "候補",
                                             color = Color.White,
                                             fontSize = 10.sp,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
@@ -288,8 +299,9 @@ fun MainScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 val loc = course.locations?.joinToString("、") ?: "未註明地點"
+                                val teacher = if (course.instructor.isNullOrBlank()) "" else " · " + course.instructor
                                 Text(
-                                    text = "📍 $loc ${if (!course.instructor.isNullOrBlank()) "· ${course.instructor}" else ""}",
+                                    text = "📍 " + loc + teacher,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -320,7 +332,8 @@ fun MainScreen(
                     Text("👨‍🏫 授課教師：${course.instructor ?: "未註明"}", fontSize = 14.sp)
                     Text("📍 教室地點：${course.locations?.joinToString("、") ?: "依系所公告"}", fontSize = 14.sp)
                     Text("⏰ 上課節次：${course.timeSlots?.joinToString("，") ?: "未排定"}", fontSize = 14.sp)
-                    Text("📌 選課狀態：${if (course.isEnrolled) "正選" else "候補"}", fontSize = 14.sp)
+                    val enrolledText = if (course.isEnrolled) "正選" else "候補"
+                    Text("📌 選課狀態：" + enrolledText, fontSize = 14.sp)
                 }
             },
             confirmButton = {

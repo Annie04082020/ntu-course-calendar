@@ -176,8 +176,9 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                     }
 
                                     if (c.location.isNotBlank()) {
+                                        val teacher = if (c.course.instructor.isNullOrBlank()) "" else " · " + c.course.instructor
                                         Text(
-                                            text = "📍 ${c.location} ${if (!c.course.instructor.isNullOrBlank()) "· ${c.course.instructor}" else ""}",
+                                            text = "📍 " + c.location + teacher,
                                             style = TextStyle(
                                                 color = ColorProvider(theme.sub),
                                                 fontSize = 9.sp

@@ -184,6 +184,7 @@
           <ol style="color: var(--text-secondary); font-size: 13px; line-height: 1.8; padding-left: 20px;">
             <li>將上方書籤按鈕拖曳至瀏覽器書籤列。</li>
             <li>登入並前往臺大課程網的 <a href="https://course.ntu.edu.tw/result/adddrop2/table" target="_blank" style="color: var(--accent-primary); text-decoration: underline;">課表結果 (/result/adddrop2/table)</a> 或 <a href="https://course.ntu.edu.tw/priority/table" target="_blank" style="color: var(--accent-primary); text-decoration: underline;">志願預選 (/priority/table)</a>。</li>
+            <div cla ss="modal-body">
             <li>點擊書籤列的「臺大課程日曆好朋友」，系統將自動擷取課程資訊並補齊時間、學分與教室，提供<strong>「✨ 同步至網頁」</strong>與<strong>「下載日曆 (.ics)」</strong>！</li>
           </ol>
         </div>
@@ -198,7 +199,6 @@
         <div class="modal-title">📋 貼上課表代碼匯入</div>
         <button class="modal-close" id="import-close" aria-label="關閉">✕</button>
       </div>
-      <div class="modal-body">
         <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6;">
           若您使用書籤小工具時點選了「📋 複製代碼」，請在下方貼上 JSON 課表代碼，即可將課表同步儲存在您的瀏覽器中：
         </p>
@@ -691,11 +691,15 @@
       const activePeriods = PERIOD_ORDER.slice(minPeriodIdx, maxPeriodIdx + 1);
 
       // 動態設定精確網格行高，避免行動裝置或節次超出時發生破版錯位
-      matrixEl.style.gridTemplateRows = `38px repeat(${activePeriods.length}, minmax(64px, auto))`;
+      const isMobile = window.innerWidth <= 768;
+      const headHeight = isMobile ? '28px' : '38px';
+      const cellHeight = isMobile ? '48px' : '64px';
+      matrixEl.style.gridTemplateRows = `${headHeight} repeat(${activePeriods.length}, minmax(${cellHeight}, auto))`;
 
-      // 欄首 Header (第一欄加入 tt-col-sticky 支援手機橫向滑動時時間軸固定)
+      // 欄首 Header
+      const col1Label = isMobile ? '節次' : '節次 / 時間';
       const headerHTML = [
-        '<div class="tt-col-head tt-col-sticky" style="grid-column: 1; grid-row: 1;">節次 / 時間</div>',
+        `<div class="tt-col-head tt-col-sticky" style="grid-column: 1; grid-row: 1;">${col1Label}</div>`,
         '<div class="tt-col-head" style="grid-column: 2; grid-row: 1;">週一</div>',
         '<div class="tt-col-head" style="grid-column: 3; grid-row: 1;">週二</div>',
         '<div class="tt-col-head" style="grid-column: 4; grid-row: 1;">週三</div>',
@@ -708,10 +712,11 @@
       activePeriods.forEach((p, idx) => {
         const def = PERIOD_DEFS[p];
         const row = idx + 2;
+        const timeDisplay = isMobile ? def.time.split('-')[0] : def.time;
         const labelHTML = `
           <div class="tt-row-label tt-col-sticky" style="grid-column: 1; grid-row: ${row};">
             <span class="p-num">${def.p}</span>
-            <span class="p-time">${def.time}</span>
+            <span class="p-time">${timeDisplay}</span>
           </div>
         `;
         matrixEl.insertAdjacentHTML('beforeend', labelHTML);
@@ -1482,6 +1487,15 @@
       } catch (err) {}
 
       prompt('請手動複製下列書籤代碼：', href);
+    });
+
+    // 螢幕尺寸改變時自動調校課表尺寸與行高
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (typeof renderApp === 'function') renderApp();
+      }, 150);
     });
 
     // 啟動應用
