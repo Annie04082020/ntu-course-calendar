@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         repo = CourseRepository(this)
+        repo.triggerWidgetUpdate()
 
         handleIntent(intent)
 
