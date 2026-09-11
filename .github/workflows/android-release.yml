@@ -1,0 +1,70 @@
+name: Build and Release Android Widget APK
+
+on:
+  push:
+    tags:
+      - 'android-v*'
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Release tag (e.g. android-v1.0.0)'
+        required: true
+        default: 'android-v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew || true
+          gradle wrapper
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/release/app-release.apk output/NTU-Course-Calendar-Widget.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || inputs.version_tag }}
+          name: "🤖 Android 課表小工具 App ${{ github.ref_name || inputs.version_tag }}"
+          body: |
+            ## 📱 臺大課表好朋友 Android 原生小工具 App
+
+            專為臺大學生打造的桌面課表小工具！
+
+            ### ✨ 核心亮點
+            - **2D 週課表矩陣**：左側時間節次軸、頂部星期欄、跨節課程卡片與當日高亮。
+            - **今日焦點與倒數**：即時掌握目前上課中 / 下一堂課與教室地點。
+            - **一鍵網頁同步**：支援從 [臺大課程日曆好朋友](https://annie04082020.github.io/ntu-course-calendar/) 網頁點擊一鍵同步。
+            - **免付費軟體**：使用 Google Jetpack Compose Glance 原生開發，免裝 KWGT Pro。
+
+            ### 📥 安裝說明
+            1. 下載下方的 `NTU-Course-Calendar-Widget.apk` 並在 Android 手機/平板安裝。
+            2. 開啟 App，可從網頁同步或貼上代碼匯入課表。
+            3. 回到桌面長按空白處 ➔ 選擇「微件 / 小工具」➔ 搜尋「臺大課表好朋友」新增即可！
+          files: |
+            output/NTU-Course-Calendar-Widget.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

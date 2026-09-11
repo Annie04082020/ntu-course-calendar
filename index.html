@@ -57,6 +57,10 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
           iOS 小工具
         </button>
+        <button class="btn-nav-action" id="btn-open-android-modal" title="匯出至 Android 原生桌面小工具 App">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 16V8a7 7 0 0 1 14 0v8"/><line x1="8" y1="3" x2="6" y2="1"/><line x1="16" y1="3" x2="18" y2="1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><rect x="5" y="16" width="14" height="5" rx="1"/></svg>
+          Android
+        </button>
         <button class="btn-nav-action" id="btn-reset-data" title="清除個人課表或重新載入示範">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           <span id="btn-reset-text">清除/示範</span>
@@ -123,6 +127,10 @@
           <button class="btn-secondary-block" id="btn-sidebar-scriptable" style="margin-top:8px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 14px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:var(--radius-sm); color:#60a5fa; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             產生 iOS / iPad 桌面小工具
+          </button>
+          <button class="btn-secondary-block" id="btn-sidebar-android" style="margin-top:6px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 14px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); border-radius:var(--radius-sm); color:#34d399; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 16V8a7 7 0 0 1 14 0v8"/><line x1="8" y1="3" x2="6" y2="1"/><line x1="16" y1="3" x2="18" y2="1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><rect x="5" y="16" width="14" height="5" rx="1"/></svg>
+            Android 原生小工具 App
           </button>
         </div>
       </aside>
@@ -310,6 +318,66 @@
           <button class="btn-nav-primary" id="btn-copy-scriptable-code" style="gap:6px;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             一鍵複製 Scriptable 腳本代碼
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Android Widget Modal -->
+  <div class="modal-backdrop" id="modal-android-backdrop">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.2"><path d="M5 16V8a7 7 0 0 1 14 0v8"/><line x1="8" y1="3" x2="6" y2="1"/><line x1="16" y1="3" x2="18" y2="1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><rect x="5" y="16" width="14" height="5" rx="1"/></svg>
+          🤖 Android 原生桌面小工具 App
+        </div>
+        <button class="modal-close" id="android-close" aria-label="關閉">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin: 0;">
+          專為 Android 手機與平板打造的原生課表小工具！支援<strong>2D 週課表矩陣（左側時間軸 + 跨節卡片）</strong>與<strong>今日焦點倒數</strong>，完全免安裝付費第三方軟體。
+        </p>
+
+        <!-- Step-by-step guidance pill cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 4px 0;">
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px;">
+            <div style="font-size: 11.5px; color: var(--accent-primary); font-weight: 700; margin-bottom: 2px;">步驟 1</div>
+            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">安裝 Android App</div>
+            <a href="https://github.com/Annie04082020/ntu-course-calendar/releases" target="_blank" style="font-size: 11.5px; color: #34d399; text-decoration: underline; display: inline-block; margin-top: 4px;">前往 GitHub Releases 下載 APK ↗</a>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px;">
+            <div style="font-size: 11.5px; color: var(--accent-primary); font-weight: 700; margin-bottom: 2px;">步驟 2</div>
+            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">一鍵同步至 App</div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">點擊下方按鈕直接喚起同步</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px 12px;">
+            <div style="font-size: 11.5px; color: var(--accent-primary); font-weight: 700; margin-bottom: 2px;">步驟 3</div>
+            <div style="font-size: 12.5px; color: var(--text-primary); font-weight: 600;">桌面新增微件</div>
+            <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">搜尋「臺大課表好朋友」</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);" id="android-courses-count">已收錄 0 門課程代碼</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="android-include-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer;">
+            <label for="android-include-waitlist" style="font-size:12px; color:var(--text-secondary); cursor:pointer;">包含志願候補課程</label>
+          </div>
+        </div>
+
+        <!-- Textarea with generated code for manual copy-paste -->
+        <textarea id="android-code-area" class="import-textarea" readonly style="height: 110px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; background: rgba(10, 15, 29, 0.85);"></textarea>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; flex-wrap: wrap;">
+          <button class="filter-pill" id="btn-cancel-android">關閉</button>
+          <button class="filter-pill" id="btn-copy-android-code" style="gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            複製 JSON 代碼
+          </button>
+          <button class="btn-nav-primary" id="btn-launch-android-app" style="background:linear-gradient(135deg, #059669, #10b981); gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            🚀 一鍵喚起 Android App 同步
           </button>
         </div>
       </div>
@@ -1224,6 +1292,82 @@
       modal.classList.remove('show');
     });
 
+    // Android App Widget Modal & Deep Link Generator
+    function generateAndroidJson(selectedCourses, includeWaitlist = true) {
+      const targetCourses = includeWaitlist ? selectedCourses : selectedCourses.filter(c => c.isEnrolled);
+      const cleanData = targetCourses.map(c => ({
+        name: cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
+        instructor: c.instructor || '',
+        locations: c.locations || [],
+        timeSlots: c.timeSlots || [],
+        isEnrolled: c.isEnrolled !== false,
+        url: c.url || 'https://course.ntu.edu.tw'
+      }));
+      return JSON.stringify(cleanData, null, 2);
+    }
+
+    function openAndroidModal() {
+      const selected = courses.filter(c => selectedCourseIds.has(c.id));
+      if (!selected || selected.length === 0) {
+        alert('請先在左側勾選至少一門要匯出至 Android 小工具的課程！');
+        return;
+      }
+      const includeWaitlist = document.getElementById('android-include-waitlist').checked;
+      const json = generateAndroidJson(selected, includeWaitlist);
+      document.getElementById('android-code-area').value = json;
+      document.getElementById('android-courses-count').textContent = `已收錄 ${selected.length} 門課程代碼`;
+
+      const modal = document.getElementById('modal-android-backdrop');
+      modal.classList.add('open');
+      modal.classList.add('show');
+    }
+
+    document.getElementById('android-include-waitlist').addEventListener('change', () => {
+      const selected = courses.filter(c => selectedCourseIds.has(c.id));
+      const includeWaitlist = document.getElementById('android-include-waitlist').checked;
+      document.getElementById('android-code-area').value = generateAndroidJson(selected, includeWaitlist);
+    });
+
+    document.getElementById('btn-open-android-modal').addEventListener('click', openAndroidModal);
+    const sidebarAndroidBtn = document.getElementById('btn-sidebar-android');
+    if (sidebarAndroidBtn) sidebarAndroidBtn.addEventListener('click', openAndroidModal);
+
+    document.getElementById('btn-launch-android-app').addEventListener('click', () => {
+      const json = document.getElementById('android-code-area').value;
+      const deepLink = `ntucourse://import?data=${encodeURIComponent(json)}`;
+      window.location.href = deepLink;
+      showToast('🚀 正在嘗試喚起 Android 課表好朋友 App...');
+    });
+
+    document.getElementById('btn-copy-android-code').addEventListener('click', async () => {
+      const codeArea = document.getElementById('android-code-area');
+      const code = codeArea.value;
+      const setSuccess = () => {
+        const btn = document.getElementById('btn-copy-android-code');
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ✅ 已複製代碼！';
+        showToast('🎉 Android 課表代碼已複製！請打開 App 貼上');
+        setTimeout(() => { btn.innerHTML = origHTML; }, 2500);
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(code);
+          setSuccess();
+          return;
+        } catch (e) {}
+      }
+      codeArea.select();
+      document.execCommand('copy');
+      setSuccess();
+    });
+
+    document.getElementById('btn-cancel-android').addEventListener('click', () => {
+      const modal = document.getElementById('modal-android-backdrop');
+      modal.classList.remove('open');
+      modal.classList.remove('show');
+    });
+
     // Reset / Toggle demo
     document.getElementById('btn-reset-data').addEventListener('click', () => {
       if (isDemoMode) {
@@ -1260,6 +1404,7 @@
     bindModal('btn-open-import-modal', 'modal-import-backdrop', 'import-close');
     bindModal(null, 'modal-export-backdrop', 'export-close');
     bindModal(null, 'modal-scriptable-backdrop', 'scriptable-close');
+    bindModal(null, 'modal-android-backdrop', 'android-close');
     bindModal(null, 'modal-detail-backdrop', 'md-close');
 
     // Manual Import submission
