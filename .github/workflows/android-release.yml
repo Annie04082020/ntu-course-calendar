@@ -40,7 +40,13 @@ jobs:
       - name: Build Release APK
         working-directory: android
         run: |
-          gradle assembleRelease --stacktrace --no-daemon
+          gradle assembleRelease --stacktrace --no-daemon 2>&1 | tee ../build.log || {
+            echo "## ❌ Build Failure Log" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 ../build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Rename APK
         run: |
