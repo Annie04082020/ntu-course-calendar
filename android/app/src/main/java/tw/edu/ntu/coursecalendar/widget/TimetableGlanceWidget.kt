@@ -46,15 +46,12 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                 else -> 260.dp
             }
 
-            val widthPx = (widgetWidthDp.value * density).toInt()
-            val heightPx = (widgetHeightDp.value * density).toInt()
-
             val bitmap = TimetableBitmapRenderer.render(
                 context = context,
                 courses = courses,
                 weekSchedule = weekSchedule,
-                widthPx = widthPx,
-                heightPx = heightPx
+                widthDp = widgetWidthDp.value,
+                heightDp = widgetHeightDp.value
             )
 
             Box(

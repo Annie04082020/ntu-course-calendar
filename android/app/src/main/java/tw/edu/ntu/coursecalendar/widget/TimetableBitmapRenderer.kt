@@ -13,6 +13,12 @@ import java.util.*
 
 object TimetableBitmapRenderer {
 
+    // Android Binder transaction IPC limit is 1MB (1,048,576 bytes).
+    // ARGB_8888 uses 4 bytes per pixel.
+    // 180,000 pixels * 4 = 720 KB, strictly guaranteeing that the widget will never fail
+    // due to TransactionTooLargeException, even when stretched to full screen height.
+    private const val MAX_SAFE_PIXELS = 180_000.0
+
     fun render(
         context: Context,
         courses: List<Course>,
@@ -20,12 +26,40 @@ object TimetableBitmapRenderer {
         widthPx: Int,
         heightPx: Int
     ): Bitmap {
-        val w = maxOf(400, widthPx)
-        val h = maxOf(300, heightPx)
+        val deviceDensity = context.resources.displayMetrics.density.coerceAtLeast(1f)
+        return render(
+            context = context,
+            courses = courses,
+            weekSchedule = weekSchedule,
+            widthDp = widthPx / deviceDensity,
+            heightDp = heightPx / deviceDensity
+        )
+    }
+
+    fun render(
+        context: Context,
+        courses: List<Course>,
+        weekSchedule: Map<String, List<ScheduledCourse>>,
+        widthDp: Float,
+        heightDp: Float
+    ): Bitmap {
+        val rawW = maxOf(320f, widthDp)
+        val rawH = maxOf(220f, heightDp)
+        val totalArea = rawW.toDouble() * rawH.toDouble()
+
+        // Calculate dynamic scale factor to keep total pixel count <= MAX_SAFE_PIXELS
+        val maxAllowedScale = 1.4f
+        val budgetScale = Math.sqrt(MAX_SAFE_PIXELS / totalArea).toFloat()
+        val scale = minOf(maxAllowedScale, budgetScale).coerceAtLeast(0.6f)
+
+        val w = (rawW * scale).toInt().coerceAtLeast(320)
+        val h = (rawH * scale).toInt().coerceAtLeast(220)
+
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        val density = context.resources.displayMetrics.density
+        // Internal rendering density matches the bitmap scaling
+        val density = scale
 
         // 1. 計算星期與節次
         val calendar = Calendar.getInstance()
@@ -233,6 +267,13 @@ object TimetableBitmapRenderer {
                     val innerPadY = 3f * density
                     val maxTextW = maxOf(10, (dayW - innerPadX * 2).toInt())
 
+                    val maxLines = when {
+                        cardH >= 70f * density -> 4
+                        cardH >= 48f * density || span >= 3 -> 3
+                        cardH >= 32f * density || span >= 2 -> 2
+                        else -> 1
+                    }
+
                     val titleLayout = StaticLayout.Builder.obtain(
                         course.course.name,
                         0,
@@ -241,7 +282,7 @@ object TimetableBitmapRenderer {
                         maxTextW
                     )
                         .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                        .setMaxLines(if (span >= 3) 3 else (if (span >= 2) 2 else 1))
+                        .setMaxLines(maxLines)
                         .setEllipsize(TextUtils.TruncateAt.END)
                         .build()
 
@@ -250,8 +291,8 @@ object TimetableBitmapRenderer {
                     titleLayout.draw(canvas)
                     canvas.restore()
 
-                    // 地點標籤
-                    if (span >= 2 && course.location.isNotBlank() && cardH >= 36f * density) {
+                    // 地點標籤 (若垂直高度足夠或跨節，顯示教室位置)
+                    if (course.location.isNotBlank() && (cardH >= 36f * density || span >= 2)) {
                         val subColor = Color.argb(
                             (theme.sub.alpha * 255).toInt(),
                             (theme.sub.red * 255).toInt(),
