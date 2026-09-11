@@ -53,7 +53,7 @@
                 android:resource="@xml/timetable_widget_info" />
         </receiver>
 
-        <!-- 今日焦點與時間軸小工具 (Today Focus) -->
+        <!-- 今日節次課表小工具 (Today Timetable) -->
         <receiver
             android:name=".widget.TodayGlanceWidgetReceiver"
             android:exported="true"

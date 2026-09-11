@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">臺大課表好朋友</string>
-    <string name="widget_timetable_name">臺大週課表矩陣 (2D)</string>
-    <string name="widget_today_name">臺大今日焦點課表</string>
+    <string name="widget_timetable_name">臺大 2D 週課表矩陣 (大)</string>
+    <string name="widget_today_name">臺大今日節次功課表 (中)</string>
 </resources>
