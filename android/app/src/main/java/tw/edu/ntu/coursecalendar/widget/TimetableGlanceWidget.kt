@@ -5,9 +5,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -23,6 +25,8 @@ import tw.edu.ntu.coursecalendar.data.NTUPeriods
 import java.util.*
 
 class TimetableGlanceWidget : GlanceAppWidget() {
+
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repo = CourseRepository(context)
@@ -64,40 +68,53 @@ class TimetableGlanceWidget : GlanceAppWidget() {
             if (dMax > maxPIdx) maxPIdx = dMax
         }
         val displayPeriods = NTUPeriods.ORDER.subList(minPIdx, maxPIdx + 1)
-
         val numPeriods = displayPeriods.size
-        val rowHeight = when {
-            numPeriods <= 7 -> 34.dp
-            numPeriods == 8 -> 30.dp
-            numPeriods == 9 -> 26.dp
-            numPeriods == 10 -> 23.dp
-            else -> 20.dp
-        }
-        val gap = if (numPeriods >= 10) 2.dp else 3.dp
-        val headerRowHeight = 20.dp
 
         val hasWeekend = (weekSchedule["六"]?.isNotEmpty() == true) || (weekSchedule["日"]?.isNotEmpty() == true)
         val schoolDays = if (hasWeekend) listOf("一", "二", "三", "四", "五", "六") else listOf("一", "二", "三", "四", "五")
 
         provideContent {
+            val size = LocalSize.current
+            val widgetWidth = if (size.width > 50.dp) size.width else 340.dp
+            val widgetHeight = if (size.height > 50.dp) size.height else 240.dp
+
+            val padding = 6.dp
+            val timeColWidth = 22.dp
+            val dayGap = 2.dp
+            val timeGap = 3.dp
+
+            // 依可用寬度等分各星期欄位，確保週一至週五皆可100%完整呈現
+            val numDays = schoolDays.size
+            val rawAvailDayWidth = widgetWidth - (padding * 2) - timeColWidth - timeGap - (dayGap * (numDays - 1))
+            val availDayWidth = if (rawAvailDayWidth > 100.dp) rawAvailDayWidth else (30.dp * numDays)
+            val dayColWidth = availDayWidth / numDays
+
+            // 依可用高度等分各節次高度，確保第 1 至 8 節完整收納且隨微件縮放自動填滿
+            val titleRowHeight = 18.dp
+            val headerRowHeight = 16.dp
+            val periodGap = if (numPeriods >= 9) 1.dp else 2.dp
+            val rawAvailGridHeight = widgetHeight - (padding * 2) - titleRowHeight - 3.dp - headerRowHeight - 2.dp
+            val availGridHeight = if (rawAvailGridHeight > 60.dp) rawAvailGridHeight else (18.dp * numPeriods)
+            val rowHeight = (availGridHeight - (periodGap * (numPeriods - 1))) / numPeriods
+
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .background(WidgetColors.BgStart)
                     .cornerRadius(16.dp)
-                    .padding(8.dp)
+                    .padding(padding)
                     .clickable(actionStartActivity<MainActivity>())
             ) {
                 // 1. 頂部標題列
                 Row(
-                    modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                    modifier = GlanceModifier.fillMaxWidth().height(titleRowHeight),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "📅 臺大週課表",
                         style = TextStyle(
                             color = ColorProvider(WidgetColors.Accent),
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -106,12 +123,12 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                         text = "$month/$dayOfMonth 週$currentWeekday",
                         style = TextStyle(
                             color = ColorProvider(WidgetColors.SecondaryText),
-                            fontSize = 11.sp
+                            fontSize = 10.sp
                         )
                     )
                 }
 
-                Spacer(modifier = GlanceModifier.height(4.dp))
+                Spacer(modifier = GlanceModifier.height(3.dp))
 
                 // 2. 2D 功課表矩陣 (左側時間節次欄 + 星期各欄)
                 Row(
@@ -119,31 +136,31 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                 ) {
                     // A. 左側時間欄 (Time Column) - 簡寫省空間
                     Column(
-                        modifier = GlanceModifier.width(28.dp).fillMaxHeight(),
+                        modifier = GlanceModifier.width(timeColWidth).fillMaxHeight(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // 時間欄標題
                         Box(
-                            modifier = GlanceModifier.width(28.dp).height(headerRowHeight),
+                            modifier = GlanceModifier.width(timeColWidth).height(headerRowHeight),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "節",
                                 style = TextStyle(
                                     color = ColorProvider(WidgetColors.SecondaryText),
-                                    fontSize = 9.sp,
+                                    fontSize = 8.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
                         }
 
-                        Spacer(modifier = GlanceModifier.height(gap))
+                        Spacer(modifier = GlanceModifier.height(periodGap))
 
                         displayPeriods.forEachIndexed { idx, p ->
                             val def = NTUPeriods.DEFS[p]
                             Column(
                                 modifier = GlanceModifier
-                                    .width(28.dp)
+                                    .width(timeColWidth)
                                     .height(rowHeight)
                                     .background(ColorProvider(WidgetColors.CardBg))
                                     .cornerRadius(4.dp)
@@ -155,28 +172,28 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                                     text = p,
                                     style = TextStyle(
                                         color = ColorProvider(WidgetColors.AccentGlow),
-                                        fontSize = 9.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
-                                if (def != null && rowHeight >= 24.dp) {
+                                if (def != null && rowHeight >= 22.dp) {
                                     val shortTime = def.time.replace("^0".toRegex(), "")
                                     Text(
                                         text = shortTime,
                                         style = TextStyle(
                                             color = ColorProvider(WidgetColors.SecondaryText),
-                                            fontSize = 7.sp
+                                            fontSize = 6.sp
                                         )
                                     )
                                 }
                             }
                             if (idx < displayPeriods.size - 1) {
-                                Spacer(modifier = GlanceModifier.height(gap))
+                                Spacer(modifier = GlanceModifier.height(periodGap))
                             }
                         }
                     }
 
-                    Spacer(modifier = GlanceModifier.width(4.dp))
+                    Spacer(modifier = GlanceModifier.width(timeGap))
 
                     // B. 星期各欄 (週一至週五)
                     schoolDays.forEachIndexed { dayIdx, day ->
@@ -184,13 +201,13 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                         val dayCourses = weekSchedule[day] ?: emptyList()
 
                         Column(
-                            modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
+                            modifier = GlanceModifier.width(dayColWidth).fillMaxHeight(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            // 星期標題 (MON/TUE/WED...)
+                            // 星期標題 (MON/TUE/WED/THU/FRI)
                             Box(
                                 modifier = GlanceModifier
-                                    .fillMaxWidth()
+                                    .width(dayColWidth)
                                     .height(headerRowHeight)
                                     .background(
                                         ColorProvider(if (isToday) WidgetColors.TodayBadge else WidgetColors.CardBg)
@@ -200,16 +217,16 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                             ) {
                                 val enDay = NTUPeriods.WEEKDAYS_EN[day] ?: day
                                 Text(
-                                    text = if (isToday) "$enDay ●" else enDay,
+                                    text = if (isToday) "$enDay●" else enDay,
                                     style = TextStyle(
                                         color = ColorProvider(if (isToday) WidgetColors.PrimaryText else WidgetColors.SecondaryText),
-                                        fontSize = 9.5.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
                             }
 
-                            Spacer(modifier = GlanceModifier.height(gap))
+                            Spacer(modifier = GlanceModifier.height(periodGap))
 
                             // 依照節次填入課程區塊或空白網格
                             var i = 0
@@ -224,12 +241,12 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                                                 dpIdx <= NTUPeriods.ORDER.indexOf(course.lastPeriod)
                                     }
                                     val span = maxOf(1, covered.size)
-                                    val cardHeight = (rowHeight.value * span + gap.value * (span - 1)).dp
+                                    val cardHeight = (rowHeight * span) + (periodGap * (span - 1))
                                     val theme = WidgetColors.getCourseTheme(course.course.name)
 
                                     Column(
                                         modifier = GlanceModifier
-                                            .fillMaxWidth()
+                                            .width(dayColWidth)
                                             .height(cardHeight)
                                             .background(ColorProvider(theme.bg))
                                             .cornerRadius(5.dp)
@@ -239,17 +256,17 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                                             text = course.course.name,
                                             style = TextStyle(
                                                 color = ColorProvider(theme.text),
-                                                fontSize = if (span >= 2) 9.sp else 8.sp,
+                                                fontSize = if (span >= 2) 8.5.sp else 7.5.sp,
                                                 fontWeight = FontWeight.Bold
                                             ),
                                             maxLines = if (span >= 3) 3 else (if (span >= 2) 2 else 1)
                                         )
-                                        if (span >= 2 && course.location.isNotBlank()) {
+                                        if (span >= 2 && course.location.isNotBlank() && rowHeight >= 18.dp) {
                                             Text(
-                                                text = "📍${course.location}",
+                                                text = "📍${course.location.take(8)}",
                                                 style = TextStyle(
                                                     color = ColorProvider(theme.sub),
-                                                    fontSize = 7.sp
+                                                    fontSize = 6.5.sp
                                                 ),
                                                 maxLines = 1
                                             )
@@ -261,11 +278,11 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                                     // 空白格
                                     Box(
                                         modifier = GlanceModifier
-                                            .fillMaxWidth()
+                                            .width(dayColWidth)
                                             .height(rowHeight)
                                             .background(
                                                 ColorProvider(
-                                                    if (isToday) WidgetColors.CardHighlight else WidgetColors.CardBg.copy(alpha = 0.3f)
+                                                    if (isToday) WidgetColors.CardHighlight else WidgetColors.CardBg.copy(alpha = 0.25f)
                                                 )
                                             )
                                             .cornerRadius(4.dp)
@@ -274,13 +291,13 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                                 }
 
                                 if (i < displayPeriods.size) {
-                                    Spacer(modifier = GlanceModifier.height(gap))
+                                    Spacer(modifier = GlanceModifier.height(periodGap))
                                 }
                             }
                         }
 
                         if (dayIdx < schoolDays.size - 1) {
-                            Spacer(modifier = GlanceModifier.width(3.dp))
+                            Spacer(modifier = GlanceModifier.width(dayGap))
                         }
                     }
                 }

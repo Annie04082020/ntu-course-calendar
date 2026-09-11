@@ -12,6 +12,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.*
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -23,6 +24,8 @@ import tw.edu.ntu.coursecalendar.data.ScheduledCourse
 import java.util.*
 
 class TodayGlanceWidget : GlanceAppWidget() {
+
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repo = CourseRepository(context)
