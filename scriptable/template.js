@@ -470,13 +470,13 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
         nameTxt.textColor = colorTheme.text;
         nameTxt.lineLimit = span >= 3 ? 3 : (span >= 2 ? 2 : 1);
 
-        // 教室地點
+        // 教室地點（自動換行以完整顯示「綜合教學館 701教室」等長名稱）
         if (course.location && span >= 2) {
           card.addSpacer(1);
           const locTxt = card.addText(`📍${course.location}`);
-          locTxt.font = Font.systemFont(8);
+          locTxt.font = Font.systemFont(7.8);
           locTxt.textColor = colorTheme.sub;
-          locTxt.lineLimit = 1;
+          locTxt.lineLimit = 0;
         }
 
         // 跨 3 節以上顯示起訖節次資訊

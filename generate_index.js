@@ -706,9 +706,12 @@ const html = `<!DOCTYPE html>
 
       const activePeriods = PERIOD_ORDER.slice(minPeriodIdx, maxPeriodIdx + 1);
 
-      // 欄首 Header
+      // 動態設定精確網格行高，避免行動裝置或節次超出時發生破版錯位
+      matrixEl.style.gridTemplateRows = \`38px repeat(\${activePeriods.length}, minmax(64px, auto))\`;
+
+      // 欄首 Header (第一欄加入 tt-col-sticky 支援手機橫向滑動時時間軸固定)
       const headerHTML = [
-        '<div class="tt-col-head" style="grid-column: 1; grid-row: 1;">節次 / 時間</div>',
+        '<div class="tt-col-head tt-col-sticky" style="grid-column: 1; grid-row: 1;">節次 / 時間</div>',
         '<div class="tt-col-head" style="grid-column: 2; grid-row: 1;">週一</div>',
         '<div class="tt-col-head" style="grid-column: 3; grid-row: 1;">週二</div>',
         '<div class="tt-col-head" style="grid-column: 4; grid-row: 1;">週三</div>',
@@ -722,7 +725,7 @@ const html = `<!DOCTYPE html>
         const def = PERIOD_DEFS[p];
         const row = idx + 2;
         const labelHTML = \`
-          <div class="tt-row-label" style="grid-column: 1; grid-row: \${row};">
+          <div class="tt-row-label tt-col-sticky" style="grid-column: 1; grid-row: \${row};">
             <span class="p-num">\${def.p}</span>
             <span class="p-time">\${def.time}</span>
           </div>

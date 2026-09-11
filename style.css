@@ -295,14 +295,18 @@ body {
 /* Timetable Matrix Grid */
 .tt-matrix-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-sm);
+  position: relative;
+  scrollbar-width: thin;
 }
 
 .tt-matrix {
   display: grid;
-  grid-template-columns: 80px repeat(5, minmax(130px, 1fr));
-  grid-template-rows: 40px repeat(8, minmax(58px, auto));
-  gap: 6px;
-  min-width: 720px;
+  grid-template-columns: 74px repeat(5, minmax(120px, 1fr));
+  grid-auto-rows: minmax(64px, auto);
+  gap: 5px;
+  min-width: 674px;
 }
 
 .tt-col-head {
@@ -314,6 +318,7 @@ body {
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-xs);
+  padding: 4px 6px;
 }
 
 .tt-row-label {
@@ -324,6 +329,25 @@ body {
   background: rgba(255, 255, 255, 0.02);
   border-radius: var(--radius-xs);
   padding: 4px;
+  min-height: 64px;
+  box-sizing: border-box;
+}
+
+/* 支援行動裝置橫向滑動時時間軸固定，確保對齊與可讀性 */
+.tt-col-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: rgba(17, 24, 39, 0.96) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid var(--border-subtle);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.45);
+}
+
+.tt-col-head.tt-col-sticky {
+  z-index: 12;
+  background: rgba(22, 30, 49, 0.98) !important;
 }
 
 .tt-row-label .p-num {
@@ -342,7 +366,7 @@ body {
   background: rgba(255, 255, 255, 0.015);
   border: 1px dashed rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-xs);
-  min-height: 58px;
+  min-height: 64px;
 }
 
 /* Course Block Cards */
@@ -997,43 +1021,137 @@ body {
 }
 
 /* ==========================================================================
-   Mobile Responsive Adjustments
+   Mobile Responsive Adjustments (RWD)
    ========================================================================== */
 @media (max-width: 768px) {
+  .app-wrapper {
+    padding: 10px 10px 36px;
+  }
+
   .app-navbar {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
   }
+
   .brand-section {
     justify-content: space-between;
     width: 100%;
   }
+
+  .brand-title {
+    font-size: 15.5px;
+  }
+
   .nav-stats {
     justify-content: center;
     width: 100%;
     flex-wrap: wrap;
+    gap: 6px;
   }
+
+  .stat-pill {
+    font-size: 12px;
+    padding: 3px 10px;
+  }
+
   .nav-actions {
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     width: 100%;
-    gap: 8px;
+    gap: 6px;
   }
-  .btn-nav-action,
-  .btn-nav-primary {
-    flex: 1 1 calc(50% - 8px);
+
+  .btn-nav-action {
+    padding: 8px 6px;
+    font-size: 12px;
     justify-content: center;
     text-align: center;
+    width: 100%;
   }
+
+  .btn-nav-primary {
+    grid-column: span 2;
+    padding: 9px 12px;
+    font-size: 13px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .timetable-card {
+    padding: 12px 10px;
+    border-radius: var(--radius-sm);
+  }
+
+  .timetable-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .toolbar-title {
+    font-size: 14px;
+  }
+
+  .filter-pills {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .filter-pill {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    font-size: 11.5px;
+  }
+
   .tt-matrix-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-xs);
+    box-shadow: inset -4px 0 8px rgba(0, 0, 0, 0.25);
   }
+
+  .tt-matrix {
+    min-width: 650px;
+    grid-template-columns: 66px repeat(5, minmax(115px, 1fr));
+    gap: 4px;
+  }
+
+  .tt-course-block {
+    padding: 6px 8px;
+  }
+
+  .tt-b-name {
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .tt-b-loc {
+    font-size: 10.5px;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .tt-b-meta {
+    font-size: 10px;
+  }
+
+  .sidebar-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-sm);
+  }
+
   .modal-card {
     width: 95%;
     max-height: 90vh;
+    padding: 18px 16px;
   }
 }
 

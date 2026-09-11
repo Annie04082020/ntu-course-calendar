@@ -1,60 +1,87 @@
-# 臺大課程網 → Google 日曆 ICS 匯出工具 (NTU Course to Calendar)
+# NTU Course Calendar (臺大課程日曆與桌面小工具系統)
 
-專為國立臺灣大學（NTU）學生設計的選課結果行事曆匯出工具。類似 `ntut-course` 與 `khojit`，但針對臺大課程網的新版介面進行完整優化。
-
----
-
-## ✨ 核心特色
-
-1. **一鍵書籤免安裝 (Bookmarklet)**
-   - 將專屬書籤拖曳至瀏覽器書籤列，在已登入的臺大課程網選課結果頁面點擊一下即可啟動。
-2. **完整台大節次對應與連續節次自動合併**
-   - 自動對應臺大 0~10 節及 A~D 節標準時間（例如第 2~5 節自動合併為 `09:10 - 13:10`，不會產生零碎重疊的事件）。
-3. **智慧教室與地點辨識**
-   - 同時支援徽章教室（如「電二143」、「資103」）及備註欄位中的教室（如「綜合教學館701教室」、「新聞所302」）。
-4. **自動抓取課程概述與大綱**
-   - 透過瀏覽器同源請求（Same-origin Fetch），自動將課程網上的「課程概述 / 課程簡介」寫入行事曆事件的詳細描述（Description）中。
-5. **台大 16 週新制與自訂開學日**
-   - 預設 115-1 學期開學日：`2026-09-07`，預設週數：`16 週`，皆可在彈出介面中自由調整。
-6. **智慧過濾未選上課程**
-   - 自動識別並排除「未選上課程」區塊，僅匯出已選上的課程（亦可在彈窗中個別勾選）。
-7. **標準 RFC 5545 iCalendar (.ics)**
-   - 包含 `VTIMEZONE` (Asia/Taipei)、每週循環規則 `RRULE:FREQ=WEEKLY`、`UTF-8 with BOM` 編碼，相容 Google Calendar、Apple 日曆、Outlook 等。
+國立臺灣大學（NTU）課程資訊擷取、Google 日曆（.ics）匯出與跨平台桌面課表小工具解決方案。支援最新臺大課程網格式解析、16 週學期制排程、iOS / iPadOS Scriptable 桌面小工具與 Android 原生桌面微件。
 
 ---
 
-## 🚀 使用方式
+## 最新發布版本 (Releases)
 
-### 方式一：瀏覽器書籤小工具 (最推薦)
-1. 用瀏覽器開啟專案目錄下的 [index.html](file:///d:/ntu_info_grabber/index.html)。
-2. 將畫面上的「🎓 匯出臺大課表到行事曆」按鈕直接拖曳至瀏覽器的「書籤列」。
-3. 前往 [臺大課程網選課結果頁面](https://course.ntu.edu.tw/result/prereg2/list)（初選一階、初選二階或最終結果皆可）。
-4. 點擊書籤列的按鈕，即可彈出自訂視窗並一鍵下載 `.ics` 檔案！
+- **最新版本下載頁面**：[GitHub Releases (APK 與小工具發布專區)](https://github.com/Annie04082020/ntu-course-calendar/releases)
+- **線上工具體驗網址**：[臺大課程日曆好朋友 (GitHub Pages)](https://annie04082020.github.io/ntu-course-calendar/)
 
-### 方式二：開發者工具 Console 執行
-在選課結果頁面按下 `F12` 打開開發者人員工具，切換至 `Console` 分頁，貼上 `bookmarklet_raw.js` 中的代碼並按下 Enter 即可啟動。
+手機使用者可直接進入上方 Releases 頁面下載最新版 `NTU-Course-Calendar-Widget.apk`。
 
 ---
 
-## 📅 如何匯入 Google 日曆？
+## 系統功能架構
 
-1. 在電腦上打開 [Google 日曆 (calendar.google.com)](https://calendar.google.com)。
-2. 點擊右上角「設定 ⚙」圖示 →「設定」。
-3. 在左側選單點選「匯入與匯出」。
-4. 點選「從電腦中選取檔案」，選取剛才下載的 `.ics` 檔案。
-5. 選擇要匯入的日曆（建議在左側「其他日曆」點 `+` 新增一個名為「臺大課表」的專屬日曆，以方便日後一次管理或刪除）。
-6. 點擊「匯入」，全部 16 週的課程便會整齊排入日曆中！
+### 1. 行事曆標準格式匯出 (iCalendar RFC 5545)
+- **節次區間合併**：支援臺大標準 0 至 10 節及 A 至 D 節次，連續節次自動合併為單一事件（例如第 2 至 5 節自動合併為 09:10 - 13:10）。
+- **教學大樓與教室辨識**：解析實體教室徽章代碼及備註說明中的地點。
+- **課程大綱自動擷取**：透過瀏覽器同源請求（Same-origin Fetch）自動提取課程概述並填入日曆描述欄位。
+- **16 週學期與開學日排程**：預設 115-1 學期開學日為 2026-09-07，總週數 16 週，支援自訂開學日與排除未選上課程。
+
+### 2. iOS / iPadOS 桌面小工具 (Scriptable)
+- **2D 週課表矩陣 (Large / Extra Large)**：左側緊湊時間節次軸搭配頂部星期欄，支援課程實際跨節高度延展、自動折行完整顯示長教室名稱（如綜合教學館）、空白時段微光格線與當日高亮標記。
+- **今日焦點時間軸 (Medium)**：即時顯示目前上課狀態或下一堂課倒數及教室。
+- **Siri 語音互動**：支援透過 Siri 查詢今日課程狀態。
+
+### 3. Android 原生桌面微件 (Kotlin + Jetpack Compose Glance)
+- **免付費獨立微件**：使用 Google 官方 Jetpack Compose Glance 框架開發，無須依賴 KWGT Pro 等付費第三方工具。
+- **Deep Link 一鍵同步**：支援 `ntucourse://import` 協定，在網頁端點擊即可直接喚起 App 並同步課表資料。
+- **CI/CD 自動建置**：透過 GitHub Actions 於發布版本時自動編譯並簽署 Release APK。
 
 ---
 
-## 📂 專案檔案結構
+## 桌面小工具執行範例 (UI Preview)
 
-- `index.html`：主說明與操作網頁（含書籤安裝、課表視覺化預覽、動態下載）
-- `style.css`：現代質感深色 Glassmorphism 風格設計系統
-- `bookmarklet.js`：書籤小工具完整原始碼（易讀開發版）
-- `bookmarklet.min.js`：壓縮後的 `javascript:...` 專用書籤代碼
-- `bookmarklet_raw.js`：適合貼在 DevTools Console 執行的純 JS 代碼
-- `export_ics.js`：Node.js 版課表生成核心模組
-- `generate_index.js`：課表展示頁面生成腳本
-- `build_bookmarklet.js`：書籤建置與壓縮腳本
+### 1. 大尺寸 / iPad 特大尺寸 (2D 週課表矩陣)
+左側時間節次軸、頂部星期標籤、支援跨節高度延展與長地點自動折行：
 
+![Scriptable 桌面週課表小工具執行範例](./docs/widget_preview.jpg)
+
+### 2. 中尺寸與小尺寸小工具
+- **中尺寸 (4x2 今日焦點與時間軸)**：
+  ![中尺寸小工具範例](./ios_tool_look/2x4.jpg)
+
+- **小尺寸 (2x2 精簡下堂課)**：
+  ![小尺寸小工具範例](./ios_tool_look/2x2.jpg)
+
+---
+
+## 使用說明
+
+### 方式一：瀏覽器書籤小工具 (推薦)
+1. 開啟 [臺大課程日曆好朋友](https://annie04082020.github.io/ntu-course-calendar/) 網頁。
+2. 將「書籤小工具」按鈕拖曳至瀏覽器書籤列。
+3. 前往 [臺大課程網選課結果頁面](https://course.ntu.edu.tw/result/adddrop2/table) 或志願預選頁面。
+4. 點擊書籤列的按鈕，即可一鍵提取課程資料並選擇「同步至網頁」或「下載日曆 (.ics)」。
+
+### 方式二：匯入 Google 日曆
+1. 前往 [Google 日曆](https://calendar.google.com/)。
+2. 進入「設定」>「匯入與匯出」。
+3. 點選「從電腦中選取檔案」，選擇下載之 `.ics` 檔案。
+4. 選擇目標日曆（建議建立名為「臺大課表」之專屬日曆以便管理），點擊匯入。
+
+### 方式三：安裝 Android 桌面微件
+1. 前往 [GitHub Releases](https://github.com/Annie04082020/ntu-course-calendar/releases) 下載 `NTU-Course-Calendar-Widget.apk`。
+2. 在 Android 裝置上安裝並開啟 App。
+3. 可點擊網頁上的「一鍵喚起 Android App 同步」或手動貼上 JSON 代碼。
+4. 於桌面長按空白處，進入微件選單搜尋「臺大課表好朋友」並新增至桌面。
+
+---
+
+## 專案結構
+
+```
+ntu-course-calendar/
+├── android/               # Android 原生小工具 App 專案 (Kotlin + Compose Glance)
+├── docs/                  # 文件與小工具介面範例圖片
+├── scriptable/            # iOS / iPadOS Scriptable 腳本模板與說明
+├── bookmarklet.js         # 瀏覽器書籤小工具原始碼
+├── bookmarklet_href.txt   # 壓縮後的 javascript: 書籤連結
+├── generate_index.js      # 動態客戶端網頁建置腳本
+├── index.html             # 課表檢視與匯出主網頁
+├── style.css              # 響應式介面設計系統樣式表
+└── README.md              # 專案說明文件
+```
