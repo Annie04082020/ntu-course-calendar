@@ -102,7 +102,7 @@ fun MainScreen(
 ) {
     var courses by remember { mutableStateOf(repo.getCourses()) }
     var isDemo by remember { mutableStateOf(repo.isUsingDemo()) }
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableStateOf(0) }
     var showImportDialog by remember { mutableStateOf(false) }
     var selectedCourseDetail by remember { mutableStateOf<Course?>(null) }
     var importText by remember { mutableStateOf("") }
@@ -317,10 +317,10 @@ fun MainScreen(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("👨‍🏫 授課教師：${course.instructor ?: "未註明"}", fontSize = 13.5.sp)
-                    Text("📍 教室地點：${course.locations?.joinToString("、") ?: "依系所公告"}", fontSize = 13.5.sp)
-                    Text("⏰ 上課節次：${course.timeSlots?.joinToString("，") ?: "未排定"}", fontSize = 13.5.sp)
-                    Text("📌 選課狀態：${if (course.isEnrolled) "正選" else "候補"}", fontSize = 13.5.sp)
+                    Text("👨‍🏫 授課教師：${course.instructor ?: "未註明"}", fontSize = 14.sp)
+                    Text("📍 教室地點：${course.locations?.joinToString("、") ?: "依系所公告"}", fontSize = 14.sp)
+                    Text("⏰ 上課節次：${course.timeSlots?.joinToString("，") ?: "未排定"}", fontSize = 14.sp)
+                    Text("📌 選課狀態：${if (course.isEnrolled) "正選" else "候補"}", fontSize = 14.sp)
                 }
             },
             confirmButton = {
@@ -524,7 +524,7 @@ fun WeeklyTimetableMatrix(
                         if (def != null) {
                             Text(
                                 text = def.time,
-                                fontSize = 8.5.sp,
+                                fontSize = 9.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -575,18 +575,18 @@ fun WeeklyTimetableMatrix(
                                     Text(
                                         text = scheduled.course.name,
                                         color = theme.text,
-                                        fontSize = if (span >= 2) 10.5.sp else 9.5.sp,
+                                        fontSize = if (span >= 2) 11.sp else 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = if (span >= 3) 3 else (if (span >= 2) 2 else 1),
                                         overflow = TextOverflow.Ellipsis,
-                                        lineHeight = 12.sp
+                                        lineHeight = 13.sp
                                     )
                                     if (scheduled.location.isNotBlank() && span >= 2) {
                                         Spacer(modifier = Modifier.height(1.dp))
                                         Text(
                                             text = "📍${scheduled.location}",
                                             color = theme.sub,
-                                            fontSize = 8.5.sp,
+                                            fontSize = 9.sp,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )

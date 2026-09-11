@@ -9,8 +9,6 @@ import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.cornerRadius
-import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.*
@@ -63,7 +61,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "📅 週$currentWeekday 今日功課表",
+                        text = "📅 週$currentWeekday 今日節次功課表",
                         style = TextStyle(
                             color = ColorProvider(WidgetColors.Accent),
                             fontSize = 12.sp,
@@ -105,11 +103,11 @@ class TodayGlanceWidget : GlanceAppWidget() {
                         }
                     }
                 } else {
-                    // 今日節次功課表格
-                    LazyColumn(
+                    // 今日節次功課表排程
+                    Column(
                         modifier = GlanceModifier.fillMaxSize()
                     ) {
-                        items(todayCourses) { c ->
+                        todayCourses.take(4).forEachIndexed { idx, c ->
                             val isNow = currentMinutes in c.startMin..c.endMin
                             val theme = WidgetColors.getCourseTheme(c.course.name)
                             val periodsText = if (c.firstPeriod == c.lastPeriod) "第 ${c.firstPeriod} 節" else "第 ${c.firstPeriod}-${c.lastPeriod} 節"
@@ -117,15 +115,15 @@ class TodayGlanceWidget : GlanceAppWidget() {
                             Row(
                                 modifier = GlanceModifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 3.dp)
+                                    .padding(vertical = 2.dp)
                                     .background(ColorProvider(if (isNow) WidgetColors.CardHighlight else WidgetColors.CardBg))
                                     .cornerRadius(8.dp)
-                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    .padding(horizontal = 8.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // 左側時間軸標籤
+                                // 左側節次與時間標籤
                                 Column(
-                                    modifier = GlanceModifier.width(62.dp),
+                                    modifier = GlanceModifier.width(64.dp),
                                     horizontalAlignment = Alignment.Start
                                 ) {
                                     Text(
@@ -140,14 +138,14 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                         text = "${c.startTimeText}-${c.endTimeText}",
                                         style = TextStyle(
                                             color = ColorProvider(WidgetColors.SecondaryText),
-                                            fontSize = 8.5.sp
+                                            fontSize = 8.sp
                                         )
                                     )
                                 }
 
                                 Spacer(modifier = GlanceModifier.width(6.dp))
 
-                                // 右側課程彩色卡片
+                                // 右側課程彩色區塊
                                 Column(
                                     modifier = GlanceModifier.defaultWeight()
                                 ) {
@@ -167,10 +165,10 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                         if (isNow) {
                                             Spacer(modifier = GlanceModifier.width(4.dp))
                                             Text(
-                                                text = "上課中",
+                                                text = "●進行中",
                                                 style = TextStyle(
                                                     color = ColorProvider(WidgetColors.Warning),
-                                                    fontSize = 8.5.sp,
+                                                    fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             )
