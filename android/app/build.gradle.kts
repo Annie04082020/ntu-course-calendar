@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "tw.edu.ntu.coursecalendar"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "tw.edu.ntu.coursecalendar"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
 

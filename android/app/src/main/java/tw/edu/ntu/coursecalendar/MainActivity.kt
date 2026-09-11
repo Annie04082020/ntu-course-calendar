@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -135,16 +131,14 @@ fun MainScreen(
                         onClick = { showImportDialog = true },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("貼上匯入")
+                        Text("➕ 貼上匯入")
                     }
 
                     OutlinedButton(
                         onClick = onOpenWebsite,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("開啟課程網頁")
+                        Text("🌐 開啟課程網頁")
                     }
                 }
             }
@@ -159,9 +153,7 @@ fun MainScreen(
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("清除個人資料並恢復為示範模式")
+                        Text("🗑️ 清除個人資料並恢復為示範模式")
                     }
                 }
             }
@@ -176,7 +168,7 @@ fun MainScreen(
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Text("💡", fontSize = 16.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("如何新增桌面小工具？", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
