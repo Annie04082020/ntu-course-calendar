@@ -526,7 +526,7 @@ fun WeeklyTimetableMatrix(
                             )
                             .padding(vertical = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = p,
