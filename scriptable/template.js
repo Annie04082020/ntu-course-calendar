@@ -98,6 +98,35 @@ const THEME = {
   todayBadge: new Color("2563eb")
 };
 
+const WEEKDAY_NAMES_EN = {
+  '一': 'MON',
+  '二': 'TUE',
+  '三': 'WED',
+  '四': 'THU',
+  '五': 'FRI',
+  '六': 'SAT',
+  '日': 'SUN'
+};
+
+// 課程卡片彩色磨砂主題庫
+const COURSE_COLORS = [
+  { bg: new Color("1d4ed8", 0.38), border: new Color("60a5fa", 0.65), text: new Color("ffffff"), sub: new Color("bfdbfe") }, // 藍
+  { bg: new Color("047857", 0.38), border: new Color("34d399", 0.65), text: new Color("ffffff"), sub: new Color("a7f3d0") }, // 翡翠綠
+  { bg: new Color("6d28d9", 0.38), border: new Color("a78bfa", 0.65), text: new Color("ffffff"), sub: new Color("ddd6fe") }, // 紫
+  { bg: new Color("b45309", 0.38), border: new Color("fbbf24", 0.65), text: new Color("ffffff"), sub: new Color("fde68a") }, // 琥珀橙
+  { bg: new Color("be185d", 0.38), border: new Color("f472b6", 0.65), text: new Color("ffffff"), sub: new Color("fbcfe8") }, // 玫瑰粉
+  { bg: new Color("0e7490", 0.38), border: new Color("22d3ee", 0.65), text: new Color("ffffff"), sub: new Color("a5f3fc") }, // 湖水青
+  { bg: new Color("4338ca", 0.38), border: new Color("818cf8", 0.65), text: new Color("ffffff"), sub: new Color("c7d2fe") }  // 靛藍
+];
+
+function getCourseColor(courseName) {
+  let hash = 0;
+  for (let i = 0; i < courseName.length; i++) {
+    hash = (hash * 31 + courseName.charCodeAt(i)) % COURSE_COLORS.length;
+  }
+  return COURSE_COLORS[Math.abs(hash)];
+}
+
 // =============================================================================
 // 3. 節次字串解析輔助函式
 // =============================================================================
@@ -252,7 +281,7 @@ async function createWidget() {
 }
 
 // -----------------------------------------------------------------------------
-// 週課表檢視 (週一至週五 5 欄)
+// 週課表檢視 (左側時間節次 + 頂部星期 2D 功課表矩陣)
 // -----------------------------------------------------------------------------
 function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
   const headerStack = widget.addStack();
@@ -260,7 +289,7 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
 
   const titleText = headerStack.addText("📅 臺大週課表");
   titleText.textColor = THEME.accent;
-  titleText.font = Font.boldSystemFont(14);
+  titleText.font = Font.boldSystemFont(13);
 
   headerStack.addSpacer();
 
@@ -268,72 +297,212 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
   const date = now.getDate();
   const dateBadge = headerStack.addText(`${month}/${date} 週${currentDayOfWeek}`);
   dateBadge.textColor = THEME.secondary;
-  dateBadge.font = Font.mediumSystemFont(12);
+  dateBadge.font = Font.mediumSystemFont(11.5);
 
-  widget.addSpacer(8);
+  widget.addSpacer(6);
 
-  const gridStack = widget.addStack();
-  gridStack.layoutHorizontally();
-  gridStack.spacing = 6;
+  // 1. 自動偵測課表涵蓋的節次範圍 (預設最少顯示 1~8 節 08:10~16:20)
+  const allUsedPeriodIndices = [];
+  Object.values(weekSchedule).forEach(dayList => {
+    dayList.forEach(c => {
+      const startIdx = PERIOD_ORDER.indexOf(c.firstPeriod);
+      const endIdx = PERIOD_ORDER.indexOf(c.lastPeriod);
+      if (startIdx !== -1 && endIdx !== -1) {
+        for (let idx = startIdx; idx <= endIdx; idx++) {
+          allUsedPeriodIndices.push(idx);
+        }
+      }
+    });
+  });
 
-  const schoolDays = ['一', '二', '三', '四', '五'];
+  let minPIdx = PERIOD_ORDER.indexOf('1');
+  let maxPIdx = PERIOD_ORDER.indexOf('8');
+  if (allUsedPeriodIndices.length > 0) {
+    const dataMin = Math.min(...allUsedPeriodIndices);
+    const dataMax = Math.max(...allUsedPeriodIndices);
+    if (dataMin < minPIdx) minPIdx = dataMin;
+    if (dataMax > maxPIdx) maxPIdx = dataMax;
+  }
+  const displayPeriods = PERIOD_ORDER.slice(minPIdx, maxPIdx + 1);
 
-  schoolDays.forEach(day => {
-    const col = gridStack.addStack();
-    col.layoutVertically();
-    col.cornerRadius = 8;
-    col.setPadding(6, 6, 6, 6);
+  // 2. 自適應計算每格高度與間距以撐滿小工具垂直空間
+  const numPeriods = displayPeriods.length;
+  let rowHeight = 30;
+  let gap = 3;
+  if (numPeriods <= 7) {
+    rowHeight = 34;
+    gap = 3;
+  } else if (numPeriods === 8) {
+    rowHeight = 30;
+    gap = 3;
+  } else if (numPeriods === 9) {
+    rowHeight = 26;
+    gap = 3;
+  } else if (numPeriods === 10) {
+    rowHeight = 23;
+    gap = 2;
+  } else {
+    rowHeight = 20;
+    gap = 2;
+  }
+  const headerRowHeight = 20;
 
-    const isToday = (day === currentDayOfWeek);
-    col.backgroundColor = isToday ? THEME.cardBgHighlight : THEME.cardBg;
+  // 週末判斷 (若六日有課則延伸顯示，否則預設週一至週五以最大化單日寬度)
+  const hasWeekend = (weekSchedule['六'] && weekSchedule['六'].length > 0) || (weekSchedule['日'] && weekSchedule['日'].length > 0);
+  const schoolDays = hasWeekend ? ['一', '二', '三', '四', '五', '六'] : ['一', '二', '三', '四', '五'];
 
-    // 欄位標題 (例如：週一)
-    const dayTitleStack = col.addStack();
-    dayTitleStack.centerAlignContent();
-    const dayText = dayTitleStack.addText(`週${day}`);
-    dayText.font = Font.boldSystemFont(12);
-    dayText.textColor = isToday ? THEME.accentGlow : THEME.primary;
-    if (isToday) {
-      dayTitleStack.addSpacer(2);
-      const dot = dayTitleStack.addText("●");
-      dot.font = Font.systemFont(8);
-      dot.textColor = THEME.success;
+  const matrixStack = widget.addStack();
+  matrixStack.layoutHorizontally();
+  matrixStack.spacing = 5;
+
+  // ---------------------------------------------------------------------------
+  // A. 左側時間節次欄 (Time Column) - 簡寫精巧極窄，最大化留給課表空間
+  // ---------------------------------------------------------------------------
+  const timeCol = matrixStack.addStack();
+  timeCol.layoutVertically();
+  timeCol.size = new Size(26, 0);
+
+  const timeHeaderCell = timeCol.addStack();
+  timeHeaderCell.size = new Size(26, headerRowHeight);
+  timeHeaderCell.centerAlignContent();
+  const timeHeaderTxt = timeHeaderCell.addText("節");
+  timeHeaderTxt.font = Font.boldSystemFont(9.5);
+  timeHeaderTxt.textColor = THEME.secondary;
+  timeHeaderTxt.textOpacity = 0.6;
+
+  timeCol.addSpacer(gap);
+
+  for (let i = 0; i < displayPeriods.length; i++) {
+    const p = displayPeriods[i];
+    const def = PERIOD_DEFS[p] || { time: '' };
+    const timeCell = timeCol.addStack();
+    timeCell.layoutVertically();
+    timeCell.size = new Size(26, rowHeight);
+    timeCell.centerAlignContent();
+    timeCell.cornerRadius = 4;
+    timeCell.backgroundColor = new Color("ffffff", 0.03);
+
+    const pLabel = timeCell.addText(p);
+    pLabel.font = Font.boldSystemFont(9.5);
+    pLabel.textColor = THEME.accentGlow;
+
+    if (def.time && rowHeight >= 24) {
+      const shortTime = def.time.replace(/^0/, '');
+      const tLabel = timeCell.addText(shortTime);
+      tLabel.font = Font.systemFont(7);
+      tLabel.textColor = THEME.secondary;
+      tLabel.textOpacity = 0.7;
     }
 
-    col.addSpacer(4);
+    if (i < displayPeriods.length - 1) {
+      timeCol.addSpacer(gap);
+    }
+  }
 
-    const dayCourses = weekSchedule[day] || [];
-    if (dayCourses.length === 0) {
-      const emptyText = col.addText("無課");
-      emptyText.font = Font.systemFont(10);
-      emptyText.textColor = THEME.secondary;
-      emptyText.textOpacity = 0.5;
-      col.addSpacer();
+  // ---------------------------------------------------------------------------
+  // B. 星期欄 (週一至週五 功課表欄位)
+  // ---------------------------------------------------------------------------
+  schoolDays.forEach(day => {
+    const isToday = (day === currentDayOfWeek);
+    const dayCol = matrixStack.addStack();
+    dayCol.layoutVertically();
+
+    // 星期頂部標題格 (英文簡寫 MON/TUE/WED/THU/FRI)
+    const dayHeaderCell = dayCol.addStack();
+    dayHeaderCell.layoutHorizontally();
+    dayHeaderCell.size = new Size(0, headerRowHeight);
+    dayHeaderCell.centerAlignContent();
+    dayHeaderCell.cornerRadius = 5;
+
+    if (isToday) {
+      dayHeaderCell.backgroundColor = THEME.todayBadge;
     } else {
-      dayCourses.slice(0, 5).forEach((c, idx) => {
-        if (idx > 0) col.addSpacer(3);
+      dayHeaderCell.backgroundColor = new Color("ffffff", 0.05);
+    }
 
-        const card = col.addStack();
+    dayHeaderCell.addSpacer();
+    const enDay = WEEKDAY_NAMES_EN[day] || day;
+    const dayLabel = dayHeaderCell.addText(enDay);
+    dayLabel.font = Font.boldSystemFont(10.5);
+    dayLabel.textColor = isToday ? THEME.primary : THEME.secondary;
+
+    if (isToday) {
+      dayHeaderCell.addSpacer(2);
+      const dot = dayHeaderCell.addText("●");
+      dot.font = Font.systemFont(6.5);
+      dot.textColor = THEME.success;
+    }
+    dayHeaderCell.addSpacer();
+
+    dayCol.addSpacer(gap);
+
+    // 依節次排入課程卡片或空白網格
+    const dayCourses = weekSchedule[day] || [];
+
+    for (let i = 0; i < displayPeriods.length; i++) {
+      const p = displayPeriods[i];
+      const course = dayCourses.find(c => c.firstPeriod === p);
+
+      if (course) {
+        // 計算跨節跨度
+        const covered = displayPeriods.filter(dp => {
+          const dpIdx = PERIOD_ORDER.indexOf(dp);
+          return dpIdx >= PERIOD_ORDER.indexOf(course.firstPeriod) && dpIdx <= PERIOD_ORDER.indexOf(course.lastPeriod);
+        });
+        const span = Math.max(1, covered.length);
+        const cardHeight = span * rowHeight + (span - 1) * gap;
+
+        const colorTheme = getCourseColor(course.name);
+
+        const card = dayCol.addStack();
         card.layoutVertically();
+        card.size = new Size(0, cardHeight);
+        card.cornerRadius = 5;
         card.setPadding(3, 4, 3, 4);
-        card.cornerRadius = 4;
-        card.backgroundColor = isToday ? new Color("3b82f6", 0.2) : new Color("ffffff", 0.05);
+        card.backgroundColor = colorTheme.bg;
+        card.borderColor = colorTheme.border;
+        card.borderWidth = 1;
+        card.url = course.url;
 
-        const nameTxt = card.addText(c.name);
-        nameTxt.font = Font.boldSystemFont(10.5);
-        nameTxt.textColor = THEME.primary;
-        nameTxt.lineLimit = 1;
+        // 課程名稱
+        const nameTxt = card.addText(course.name);
+        nameTxt.font = Font.boldSystemFont(span >= 2 ? 10 : 8.5);
+        nameTxt.textColor = colorTheme.text;
+        nameTxt.lineLimit = span >= 3 ? 3 : (span >= 2 ? 2 : 1);
 
-        const timeTxt = card.addText(`${c.firstPeriod}-${c.lastPeriod}節`);
-        timeTxt.font = Font.systemFont(9);
-        timeTxt.textColor = THEME.accent;
+        // 教室地點
+        if (course.location && span >= 2) {
+          card.addSpacer(1);
+          const locTxt = card.addText(`📍${course.location}`);
+          locTxt.font = Font.systemFont(8);
+          locTxt.textColor = colorTheme.sub;
+          locTxt.lineLimit = 1;
+        }
 
-        const locTxt = card.addText(c.location);
-        locTxt.font = Font.systemFont(8.5);
-        locTxt.textColor = THEME.secondary;
-        locTxt.lineLimit = 1;
-      });
-      col.addSpacer();
+        // 跨 3 節以上顯示起訖節次資訊
+        if (span >= 3) {
+          card.addSpacer(1);
+          const timeBadge = card.addText(`${course.firstPeriod}-${course.lastPeriod}節`);
+          timeBadge.font = Font.systemFont(7.5);
+          timeBadge.textColor = colorTheme.sub;
+          timeBadge.textOpacity = 0.85;
+        }
+
+        // 跳過已跨越的節次
+        i += (span - 1);
+      } else {
+        // 空白時段格 (維持功課表整齊對齊的網格線)
+        const emptySlot = dayCol.addStack();
+        emptySlot.size = new Size(0, rowHeight);
+        emptySlot.cornerRadius = 4;
+        emptySlot.backgroundColor = isToday ? new Color("3b82f6", 0.05) : new Color("ffffff", 0.02);
+        emptySlot.borderColor = isToday ? new Color("3b82f6", 0.12) : new Color("2d3748", 0.25);
+        emptySlot.borderWidth = 0.5;
+      }
+
+      if (i < displayPeriods.length - 1) {
+        dayCol.addSpacer(gap);
+      }
     }
   });
 }
