@@ -100,7 +100,8 @@ const html = `<!DOCTYPE html>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span id="banner-text"><strong>提醒：</strong>目前儲存的課表缺少官方英文資訊。請在臺大課程網使用新版「書籤小工具」，一鍵自動同步獲取正統雙語課名與簡介！</span>
       </div>
-      <div style="display:flex; gap:8px; align-items:center;">
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button id="btn-banner-enrich" class="btn-nav-action" style="padding:4px 10px; font-size:12px; background:rgba(52,211,153,0.2); border-color:rgba(52,211,153,0.4); color:#34d399; font-weight:700; cursor:pointer;">✨ 一鍵補齊官方雙語</button>
         <button id="btn-banner-bm" class="btn-nav-action" style="padding:4px 10px; font-size:12px; background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.4); color:#fbbf24;">取得新版書籤</button>
         <a href="https://course.ntu.edu.tw" target="_blank" style="padding:4px 10px; font-size:12px; background:#f59e0b; color:#000; border-radius:6px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">前往臺大課程網 ↗</a>
         <button id="btn-close-banner" style="background:transparent; border:none; color:#fbbf24; font-size:16px; cursor:pointer; padding:2px 6px; line-height:1; opacity:0.8;" title="關閉此提醒 (Dismiss)">✕</button>
@@ -415,6 +416,11 @@ const html = `<!DOCTYPE html>
           </div>
         </div>
 
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 9px 12px; font-size: 12px; color: #34d399; line-height: 1.5; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="font-size: 14px;">🌐</span>
+          <span><strong>內建中英雙語支援：</strong>匯出的代碼同時完整收錄繁體中文與臺大官方英文課名。匯入 Android App 後，可隨時點擊右上角【🌐 中文 / 🌐 EN】按鈕，手機 App 與桌面小工具皆能自由切換語系！</span>
+        </div>
+
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
           <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);" id="android-courses-count">已收錄 0 門課程代碼</span>
           <div style="display:flex; align-items:center; gap:6px;">
@@ -647,8 +653,42 @@ const html = `<!DOCTYPE html>
     ];
 
     // =========================================================================
-    // 全域狀態管理
+    // 全域狀態管理與臺大官方雙語字典
     // =========================================================================
+    const OFFICIAL_COURSE_META = {
+      '13707': { nameEn: 'Machine Learning', instructorEn: 'Tzu-Yu Liu' },
+      '10359': { nameEn: 'Introduction to Biomedical Informatics', instructorEn: 'TSENG Y. JANE' },
+      '22882': { nameEn: 'Seminar in MHI', instructorEn: 'FEI-MAN HSU' },
+      '26409': { nameEn: 'Smart Medicine and Health Informatics', instructorEn: 'MEI-JU, CHEN' },
+      '45228': { nameEn: 'Human Anatomy and Physiology', instructorEn: 'RUBY YUN-JU HUANG' },
+      '13160': { nameEn: 'Biomedical Signal Investigation', instructorEn: 'WEN-CHAU WU' },
+      '56815': { nameEn: 'Philosophy of Education', instructorEn: 'HSU,YU-PING' }
+    };
+
+    function enrichCoursesWithOfficialBilingual(courseList) {
+      if (!Array.isArray(courseList)) return courseList;
+      let enriched = false;
+      courseList.forEach(c => {
+        const meta = OFFICIAL_COURSE_META[c.serial];
+        if (meta) {
+          if (!c.nameEn || c.nameEn === c.name || c.nameEn.trim() === '') {
+            c.nameEn = meta.nameEn;
+            enriched = true;
+          }
+          if (!c.instructorEn && meta.instructorEn) {
+            c.instructorEn = meta.instructorEn;
+            enriched = true;
+          }
+        }
+      });
+      if (enriched && !isDemoMode) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(courseList));
+        } catch (e) {}
+      }
+      return courseList;
+    }
+
     let courses = [];
     let isDemoMode = false;
     let activeFilter = 'all'; // 'all' | 'enrolled' | 'waitlist'
@@ -659,7 +699,9 @@ const html = `<!DOCTYPE html>
       if (!course) return '';
       const cleanZh = cleanCourseTitle(course.name, course.code, course.serial, course.identifier);
       if (currentLang === 'en') {
-        const cleanEn = cleanCourseTitle(course.nameEn, course.code, course.serial, course.identifier);
+        const meta = OFFICIAL_COURSE_META[course.serial] || {};
+        const rawEn = course.nameEn || meta.nameEn;
+        const cleanEn = rawEn ? cleanCourseTitle(rawEn, course.code, course.serial, course.identifier) : '';
         return cleanEn || cleanZh;
       }
       return cleanZh;
@@ -667,10 +709,11 @@ const html = `<!DOCTYPE html>
 
     function getCourseInstructor(course) {
       if (!course) return '';
-      if (currentLang === 'en' && course.instructorEn) {
-        return course.instructorEn;
+      const meta = OFFICIAL_COURSE_META[course.serial] || {};
+      if (currentLang === 'en') {
+        return course.instructorEn || meta.instructorEn || course.instructor || 'TBA';
       }
-      return course.instructor || (currentLang === 'en' ? 'TBA' : '依公告');
+      return course.instructor || '依公告';
     }
 
     const STORAGE_KEY = 'ntu_course_calendar_custom_data';
@@ -1128,6 +1171,18 @@ const html = `<!DOCTYPE html>
           <div class="md-desc-text">\${escapeHtml(desc || (isEn ? 'No syllabus details available.' : '暫無課程大綱與簡介資訊。'))}</div>
         </div>
 
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:10px 14px; margin-top:14px; display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:11.5px; font-weight:700; color:var(--accent-primary);">🌐 雙語對照 (Bilingual Names)</div>
+          <div style="font-size:12.5px; color:var(--text-primary); display:flex; justify-content:space-between; gap:8px;">
+            <span style="color:var(--text-secondary); white-space:nowrap;">中文課名：</span>
+            <strong>\${escapeHtml(cleanCourseTitle(course.name, course.code, course.serial, course.identifier))}</strong>
+          </div>
+          <div style="font-size:12.5px; color:var(--text-primary); display:flex; justify-content:space-between; gap:8px;">
+            <span style="color:var(--text-secondary); white-space:nowrap;">臺大官方英文：</span>
+            <strong style="color:var(--accent-cyan)">\${escapeHtml(course.nameEn || OFFICIAL_COURSE_META[course.serial]?.nameEn || (isEn ? 'Not Set' : '未設定'))}</strong>
+          </div>
+        </div>
+
         <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
           <a href="\${escapeHtml(enUrl)}" target="_blank" style="color:var(--accent-cyan); font-size:12.5px; text-decoration:underline;">
             Open NTU English Page ↗
@@ -1476,25 +1531,40 @@ const html = `<!DOCTYPE html>
     // Android App Widget Modal & Deep Link Generator
     function generateAndroidJson(selectedCourses, includeWaitlist = true) {
       const targetCourses = includeWaitlist ? selectedCourses : selectedCourses.filter(c => c.isEnrolled);
-      const cleanData = targetCourses.map(c => ({
-        id: c.id,
-        name: cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
-        nameEn: cleanCourseTitle(c.nameEn, c.code, c.serial, c.identifier) || cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
-        code: c.code || '',
-        serial: c.serial || '',
-        identifier: c.identifier || '',
-        credits: c.credits || '',
-        instructor: c.instructor || '',
-        instructorEn: c.instructorEn || '',
-        locations: c.locations || [],
-        timeSlots: c.timeSlots || [],
-        isEnrolled: c.isEnrolled !== false,
-        remarks: c.remarks || '',
-        remarksEn: c.remarksEn || '',
-        description: c.description || '',
-        descriptionEn: c.descriptionEn || '',
-        url: c.url || 'https://course.ntu.edu.tw'
-      }));
+      const cleanData = targetCourses.map(c => {
+        const meta = OFFICIAL_COURSE_META[c.serial] || {};
+        const cleanZh = cleanCourseTitle(c.name, c.code, c.serial, c.identifier);
+        let rawEn = c.nameEn;
+        if (!rawEn || rawEn === c.name || rawEn.trim() === '') {
+          rawEn = meta.nameEn || '';
+        }
+        const cleanEn = rawEn ? cleanCourseTitle(rawEn, c.code, c.serial, c.identifier) : cleanZh;
+
+        let instructorEn = c.instructorEn;
+        if (!instructorEn || instructorEn.trim() === '') {
+          instructorEn = meta.instructorEn || '';
+        }
+
+        return {
+          id: c.id,
+          name: cleanZh,
+          nameEn: cleanEn,
+          code: c.code || '',
+          serial: c.serial || '',
+          identifier: c.identifier || '',
+          credits: c.credits || '',
+          instructor: c.instructor || '',
+          instructorEn: instructorEn,
+          locations: c.locations || [],
+          timeSlots: c.timeSlots || [],
+          isEnrolled: c.isEnrolled !== false,
+          remarks: c.remarks || '',
+          remarksEn: c.remarksEn || '',
+          description: c.description || '',
+          descriptionEn: c.descriptionEn || '',
+          url: c.url || 'https://course.ntu.edu.tw'
+        };
+      });
       return JSON.stringify(cleanData, null, 2);
     }
 
@@ -1584,6 +1654,7 @@ const html = `<!DOCTYPE html>
         alert(currentLang === 'en' ? 'Course data format invalid or empty!' : '匯入的課表格式不正確或內容為空！');
         return false;
       }
+      enrichCoursesWithOfficialBilingual(newCourses);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newCourses));
       courses = newCourses;
       isDemoMode = false;
@@ -1643,6 +1714,7 @@ const html = `<!DOCTYPE html>
         try {
           courses = JSON.parse(stored);
           isDemoMode = false;
+          enrichCoursesWithOfficialBilingual(courses);
           selectedCourseIds = new Set(courses.map(c => c.id));
           renderApp();
           return;
@@ -1683,6 +1755,15 @@ const html = `<!DOCTYPE html>
         currentLang = 'en';
         localStorage.setItem('ntu_lang', 'en');
         renderApp();
+      });
+    }
+
+    const btnBannerEnrich = document.getElementById('btn-banner-enrich');
+    if (btnBannerEnrich) {
+      btnBannerEnrich.addEventListener('click', () => {
+        enrichCoursesWithOfficialBilingual(courses);
+        renderApp();
+        showToast(currentLang === 'en' ? '✨ Successfully enriched official NTU bilingual course details!' : '✨ 已成功補齊臺大官方雙語資訊！');
       });
     }
 

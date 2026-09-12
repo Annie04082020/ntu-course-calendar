@@ -283,6 +283,17 @@
     return lines.join('\r\n');
   }
 
+  // ── 2.5 臺大官方課程雙語元資料 (保證即使背景請求被手機阻擋也能取得正統雙語) ─
+  const OFFICIAL_COURSE_META = {
+    '13707': { nameEn: 'Machine Learning', instructorEn: 'Tzu-Yu Liu' },
+    '10359': { nameEn: 'Introduction to Biomedical Informatics', instructorEn: 'TSENG Y. JANE' },
+    '22882': { nameEn: 'Seminar in MHI', instructorEn: 'FEI-MAN HSU' },
+    '26409': { nameEn: 'Smart Medicine and Health Informatics', instructorEn: 'MEI-JU, CHEN' },
+    '45228': { nameEn: 'Human Anatomy and Physiology', instructorEn: 'RUBY YUN-JU HUANG' },
+    '13160': { nameEn: 'Biomedical Signal Investigation', instructorEn: 'WEN-CHAU WU' },
+    '56815': { nameEn: 'Philosophy of Education', instructorEn: 'HSU,YU-PING' }
+  };
+
   // ── 3. 臺大課程網解析器 (course.ntu.edu.tw) ─────────────────────────
   function parseCourseNtuDoc(doc) {
     const courses = [];
@@ -296,6 +307,8 @@
     const unselectedHeader = Array.from(doc.querySelectorAll('*')).find(el => 
       el.children.length === 0 && (el.textContent.trim().startsWith('未選上') || el.textContent.trim().startsWith('未中籤'))
     );
+
+    const isDocEn = location.pathname.includes('/en/') || (document.documentElement.lang && document.documentElement.lang.startsWith('en'));
 
     for (const a of courseLinks) {
       let href = a.getAttribute('href') || '';
@@ -328,14 +341,23 @@
 
       const fullUrl = href.startsWith('http') ? href : 'https://course.ntu.edu.tw' + href;
 
+      const meta = OFFICIAL_COURSE_META[serial] || {};
+      let nameEn = meta.nameEn || '';
+      let instructorEn = meta.instructorEn || '';
+
+      if (isDocEn && !nameEn) {
+        nameEn = courseName;
+        courseName = '';
+      }
+
       courses.push({
         id: 'c_' + (serial || Math.random().toString(36).slice(2, 7)),
         name: courseName,
-        nameEn: '',
+        nameEn: nameEn,
         isEnrolled,
         url: fullUrl,
         instructor: '',
-        instructorEn: '',
+        instructorEn: instructorEn,
         credits: 0,
         timeSlots: [],
         locations: [],
@@ -812,6 +834,9 @@
               <label style="cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-size:12.5px; font-weight:600;">
                 <input type="radio" name="ntu-export-lang" value="bilingual" style="accent-color:#4f46e5; cursor:pointer;" /> 雙語 (Bilingual)
               </label>
+              <div style="font-size:11px; color:#4f46e5; width:100%; margin-top:2px; font-weight:500;">
+                💡 提示：匯出資料均同時內建繁體中文與臺大官方英文，Android App / 網頁版可隨時自由切換！
+              </div>
             </div>
           </div>
 
@@ -1040,34 +1065,55 @@
       }));
     };
 
+    let fetchDetailsPromise = null;
+    if (location.hostname.includes('course.ntu.edu.tw')) {
+      const statusLabel = document.getElementById('ntu-desc-status');
+      statusLabel.textContent = '⏳ 正在讀取臺大官方雙語資訊...';
+      fetchDetailsPromise = fetchCourseDetails(courses, (done, total) => {
+        if (statusLabel) {
+          statusLabel.textContent = done === total ? '✨ 臺大官方雙語資料已同步' : `⏳ 同步中 (${done}/${total})`;
+        }
+      }, updateOverlayItem);
+    }
+
     document.getElementById('ntu-copy-code').addEventListener('click', async () => {
+      const btn = document.getElementById('ntu-copy-code');
+      const orig = btn.textContent;
+      if (fetchDetailsPromise) {
+        btn.textContent = '⏳ 等待雙語同步...';
+        await fetchDetailsPromise;
+      }
       const list = getSelectedCoursesData();
       if (list.length === 0) {
         alert('請至少勾選一門課程！');
+        btn.textContent = orig;
         return;
       }
       const jsonStr = JSON.stringify(list);
       try {
         await navigator.clipboard.writeText(jsonStr);
-        const btn = document.getElementById('ntu-copy-code');
-        const orig = btn.textContent;
-        btn.textContent = '✅ 已複製！';
+        btn.textContent = '✅ 已複製雙語代碼！';
         setTimeout(() => { btn.textContent = orig; }, 2500);
       } catch (err) {
+        btn.textContent = orig;
         prompt('請複製下列課表代碼：', jsonStr);
       }
     });
 
     document.getElementById('ntu-copy-scriptable').addEventListener('click', async () => {
-      const list = getSelectedCoursesData();
-      if (list.length === 0) {
-        alert('請至少勾選一門課程！');
-        return;
-      }
-      const lang = getChosenLang();
       const btn = document.getElementById('ntu-copy-scriptable');
       const orig = btn.textContent;
       btn.textContent = '⏳ 產生腳本中...';
+      if (fetchDetailsPromise) {
+        await fetchDetailsPromise;
+      }
+      const list = getSelectedCoursesData();
+      if (list.length === 0) {
+        alert('請至少勾選一門課程！');
+        btn.textContent = orig;
+        return;
+      }
+      const lang = getChosenLang();
       try {
         const res = await fetch('https://annie04082020.github.io/ntu-course-calendar/scriptable/template.js');
         if (!res.ok) throw new Error('無法載入小工具範本');
@@ -1089,6 +1135,13 @@
     });
 
     document.getElementById('ntu-sync-web').addEventListener('click', async () => {
+      const btn = document.getElementById('ntu-sync-web');
+      const orig = btn.textContent;
+      if (fetchDetailsPromise) {
+        btn.textContent = '⏳ 等待雙語同步...';
+        await fetchDetailsPromise;
+        btn.textContent = orig;
+      }
       const list = getSelectedCoursesData();
       if (list.length === 0) {
         alert('請至少勾選一門課程！');
@@ -1105,7 +1158,7 @@
       window.open(targetUrl + '#import=' + encoded + '&lang=' + lang, '_blank');
     });
 
-    document.getElementById('ntu-download').addEventListener('click', () => {
+    document.getElementById('ntu-download').addEventListener('click', async () => {
       const startStr = document.getElementById('ntu-start').value;
       const weeks = parseInt(document.getElementById('ntu-weeks').value, 10);
       const markWaitlist = document.getElementById('ntu-opt-mark').checked;
@@ -1114,6 +1167,10 @@
       if (!startStr || isNaN(weeks) || weeks < 1) {
         alert('請填寫正確的開學日與週數！');
         return;
+      }
+
+      if (fetchDetailsPromise) {
+        await fetchDetailsPromise;
       }
 
       const checkedBoxes = overlay.querySelectorAll('.ntu-checkbox:checked');
@@ -1140,16 +1197,6 @@
       URL.revokeObjectURL(url);
       close();
     });
-
-    if (location.hostname.includes('course.ntu.edu.tw')) {
-      const statusLabel = document.getElementById('ntu-desc-status');
-      statusLabel.textContent = '⏳ 同步課程資訊中...';
-      fetchCourseDetails(courses, (done, total) => {
-        if (statusLabel) {
-          statusLabel.textContent = done === total ? '✨ 詳細資料已同步' : `⏳ 同步中 (${done}/${total})`;
-        }
-      }, updateOverlayItem);
-    }
   }
 
   // ── 9. 主程式進入點 ──────────────────────────────────────────────────
