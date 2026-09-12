@@ -30,6 +30,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repo = CourseRepository(context)
         val courses = repo.getCourses()
+        val isEnglish = repo.isEnglish()
         val weekSchedule = CourseParser.buildWeekSchedule(courses)
 
         val calendar = Calendar.getInstance()
@@ -42,6 +43,15 @@ class TodayGlanceWidget : GlanceAppWidget() {
             Calendar.FRIDAY -> "五"
             Calendar.SATURDAY -> "六"
             else -> "日"
+        }
+        val currentWeekdayEn = when (dayOfWeekInt) {
+            Calendar.MONDAY -> "Mon"
+            Calendar.TUESDAY -> "Tue"
+            Calendar.WEDNESDAY -> "Wed"
+            Calendar.THURSDAY -> "Thu"
+            Calendar.FRIDAY -> "Fri"
+            Calendar.SATURDAY -> "Sat"
+            else -> "Sun"
         }
         val month = calendar.get(Calendar.MONTH) + 1
         val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
@@ -64,7 +74,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "📅 週$currentWeekday 今日節次功課表",
+                        text = if (isEnglish) "📅 $currentWeekdayEn Today's Schedule" else "📅 週$currentWeekday 今日節次功課表",
                         style = TextStyle(
                             color = ColorProvider(WidgetColors.Accent),
                             fontSize = 12.sp,
@@ -88,7 +98,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "☕ 今日無排課",
+                                text = if (isEnglish) "☕ No Classes Today" else "☕ 今日無排課",
                                 style = TextStyle(
                                     color = ColorProvider(WidgetColors.AccentGlow),
                                     fontSize = 14.sp,
@@ -97,7 +107,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                             )
                             Spacer(modifier = GlanceModifier.height(4.dp))
                             Text(
-                                text = "點擊開啟 2D 週功課表",
+                                text = if (isEnglish) "Tap to open full timetable" else "點擊開啟 2D 週功課表",
                                 style = TextStyle(
                                     color = ColorProvider(WidgetColors.SecondaryText),
                                     fontSize = 11.sp
@@ -112,8 +122,13 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     ) {
                         todayCourses.take(4).forEachIndexed { idx, c ->
                             val isNow = currentMinutes in c.startMin..c.endMin
+                            val displayName = c.course.getDisplayName(isEnglish)
                             val theme = WidgetColors.getCourseTheme(c.course.name)
-                            val periodsText = if (c.firstPeriod == c.lastPeriod) "第 ${c.firstPeriod} 節" else "第 ${c.firstPeriod}-${c.lastPeriod} 節"
+                            val periodsText = if (isEnglish) {
+                                if (c.firstPeriod == c.lastPeriod) "Period ${c.firstPeriod}" else "P ${c.firstPeriod}-${c.lastPeriod}"
+                            } else {
+                                if (c.firstPeriod == c.lastPeriod) "第 ${c.firstPeriod} 節" else "第 ${c.firstPeriod}-${c.lastPeriod} 節"
+                            }
 
                             Row(
                                 modifier = GlanceModifier
@@ -157,7 +172,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = c.course.name,
+                                            text = displayName,
                                             style = TextStyle(
                                                 color = ColorProvider(theme.text),
                                                 fontSize = 12.sp,
@@ -168,7 +183,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                         if (isNow) {
                                             Spacer(modifier = GlanceModifier.width(4.dp))
                                             Text(
-                                                text = "●進行中",
+                                                text = if (isEnglish) "●Active" else "●進行中",
                                                 style = TextStyle(
                                                     color = ColorProvider(WidgetColors.Warning),
                                                     fontSize = 9.sp,
@@ -179,7 +194,8 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                     }
 
                                     if (c.location.isNotBlank()) {
-                                        val teacher = if (c.course.instructor.isNullOrBlank()) "" else " · " + c.course.instructor
+                                        val instructor = if (isEnglish && !c.course.instructorEn.isNullOrBlank()) c.course.instructorEn else c.course.instructor
+                                        val teacher = if (instructor.isNullOrBlank()) "" else " · $instructor"
                                         Text(
                                             text = "📍 " + c.location + teacher,
                                             style = TextStyle(

@@ -18,7 +18,9 @@
 const USER_COURSES = /* __USER_COURSES_JSON__ */ [
   {
     name: "微積分甲 (一)",
+    nameEn: "Calculus (1)",
     instructor: "齊震宇",
+    instructorEn: "Zhen-Yu Qi",
     locations: ["共同101"],
     timeSlots: ["一 3,4", "三 3,4"],
     isEnrolled: true,
@@ -26,7 +28,9 @@ const USER_COURSES = /* __USER_COURSES_JSON__ */ [
   },
   {
     name: "普通物理學甲 (一)",
+    nameEn: "General Physics (1)",
     instructor: "張寶棣",
+    instructorEn: "Pao-Ti Chang",
     locations: ["普物館102"],
     timeSlots: ["二 2,3,4"],
     isEnrolled: true,
@@ -34,7 +38,9 @@ const USER_COURSES = /* __USER_COURSES_JSON__ */ [
   },
   {
     name: "計算機程式設計",
+    nameEn: "Computer Programming",
     instructor: "鄭卜壬",
+    instructorEn: "Pu-Jen Cheng",
     locations: ["資101"],
     timeSlots: ["四 6,7,8"],
     isEnrolled: true,
@@ -42,7 +48,9 @@ const USER_COURSES = /* __USER_COURSES_JSON__ */ [
   },
   {
     name: "資料結構與演算法",
+    nameEn: "Data Structures and Algorithms",
     instructor: "呂學一",
+    instructorEn: "Hsueh-I Lu",
     locations: ["博理101"],
     timeSlots: ["五 2,3,4"],
     isEnrolled: true,
@@ -50,13 +58,83 @@ const USER_COURSES = /* __USER_COURSES_JSON__ */ [
   },
   {
     name: "機器學習",
+    nameEn: "Machine Learning",
     instructor: "李宏毅",
+    instructorEn: "Hung-yi Lee",
     locations: ["電二143"],
     timeSlots: ["一 7,8,9"],
     isEnrolled: true,
     url: "https://course.ntu.edu.tw"
   }
 ];
+
+// 預設語言 (由匯出工具設定：'zh', 'en', 或 'bilingual')
+const USER_LANG = /* __USER_LANG__ */ "zh";
+
+const I18N_STRINGS = {
+  zh: {
+    weekTitle: "📅 臺大週課表",
+    dayFocus: (d) => `週${d} · 課表焦點`,
+    inClass: "📍 目前上課中",
+    nextClass: "⏳ 下一堂課程",
+    noMoreToday: "今日已無後續課程",
+    noClassToday: "今日無課堂安排",
+    freeDayTitle: "🎉 今日無課",
+    freeDaySub: "好好放鬆休息！",
+    timeColHeader: "節",
+    periodUnit: "節",
+    smallHeader: (d) => `臺大課表 · 週${d}`,
+    smallInClass: "📍 上課中",
+    smallNext: "⏳ 下一堂"
+  },
+  en: {
+    weekTitle: "📅 NTU Timetable",
+    dayFocus: (d) => `${WEEKDAY_NAMES_EN[d] || d} · Focus`,
+    inClass: "📍 In Class",
+    nextClass: "⏳ Next Class",
+    noMoreToday: "No more classes today",
+    noClassToday: "No classes scheduled today",
+    freeDayTitle: "🎉 Free Day",
+    freeDaySub: "Enjoy your time off!",
+    timeColHeader: "Per",
+    periodUnit: "P",
+    smallHeader: (d) => `NTU · ${WEEKDAY_NAMES_EN[d] || d}`,
+    smallInClass: "📍 In Class",
+    smallNext: "⏳ Next"
+  },
+  bilingual: {
+    weekTitle: "📅 臺大週課表 Schedule",
+    dayFocus: (d) => `週${d} (${WEEKDAY_NAMES_EN[d] || d})`,
+    inClass: "📍 目前上課中 Now",
+    nextClass: "⏳ 下一堂課 Next",
+    noMoreToday: "今日已無課 No more class",
+    noClassToday: "今日無課堂 No class",
+    freeDayTitle: "🎉 今日無課 Free Day",
+    freeDaySub: "好好放鬆！ Enjoy your day!",
+    timeColHeader: "節",
+    periodUnit: "節",
+    smallHeader: (d) => `課表 · ${WEEKDAY_NAMES_EN[d] || d}`,
+    smallInClass: "📍 上課中",
+    smallNext: "⏳ 下一堂"
+  }
+};
+
+const I18N = I18N_STRINGS[USER_LANG] || I18N_STRINGS.zh;
+
+function getCourseDisplayName(c) {
+  if (!c) return "";
+  if (USER_LANG === "en" && c.nameEn) return c.nameEn;
+  if (USER_LANG === "bilingual" && c.nameEn && c.nameEn !== c.name) {
+    return `${c.nameEn} ${c.name}`;
+  }
+  return c.name || "";
+}
+
+function getInstructorDisplayName(c) {
+  if (!c) return "";
+  if (USER_LANG === "en" && c.instructorEn) return c.instructorEn;
+  return c.instructor || "";
+}
 
 // =============================================================================
 // 2. 臺大標準節次與常數
@@ -287,7 +365,7 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
   const headerStack = widget.addStack();
   headerStack.centerAlignContent();
 
-  const titleText = headerStack.addText("📅 臺大週課表");
+  const titleText = headerStack.addText(I18N.weekTitle);
   titleText.textColor = THEME.accent;
   titleText.font = Font.boldSystemFont(13);
 
@@ -295,7 +373,7 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
 
   const month = now.getMonth() + 1;
   const date = now.getDate();
-  const dateBadge = headerStack.addText(`${month}/${date} 週${currentDayOfWeek}`);
+  const dateBadge = headerStack.addText(USER_LANG === 'en' ? `${month}/${date} ${WEEKDAY_NAMES_EN[currentDayOfWeek] || currentDayOfWeek}` : `${month}/${date} 週${currentDayOfWeek}`);
   dateBadge.textColor = THEME.secondary;
   dateBadge.font = Font.mediumSystemFont(11.5);
 
@@ -348,15 +426,16 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
   const headerRowHeight = 20;
 
   // 週末判斷 (若六日有課則延伸顯示，否則預設週一至週五以最大化單日寬度)
-  const hasWeekend = (weekSchedule['六'] && weekSchedule['六'].length > 0) || (weekSchedule['日'] && weekSchedule['日'].length > 0);
-  const schoolDays = hasWeekend ? ['一', '二', '三', '四', '五', '六'] : ['一', '二', '三', '四', '五'];
+  const hasWeekendCourses = Boolean((weekSchedule['六'] && weekSchedule['六'].length > 0) || (weekSchedule['日'] && weekSchedule['日'].length > 0));
+  const schoolDays = hasWeekendCourses ? ['一', '二', '三', '四', '五', '六', '日'] : ['一', '二', '三', '四', '五'];
 
+  // 2D 矩陣容器 (水平排列各直欄)
   const matrixStack = widget.addStack();
   matrixStack.layoutHorizontally();
-  matrixStack.spacing = 5;
+  matrixStack.spacing = gap;
 
   // ---------------------------------------------------------------------------
-  // A. 左側時間節次欄 (Time Column) - 簡寫精巧極窄，最大化留給課表空間
+  // A. 時間節次欄 (最左側)
   // ---------------------------------------------------------------------------
   const timeCol = matrixStack.addStack();
   timeCol.layoutVertically();
@@ -365,7 +444,7 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
   const timeHeaderCell = timeCol.addStack();
   timeHeaderCell.size = new Size(26, headerRowHeight);
   timeHeaderCell.centerAlignContent();
-  const timeHeaderTxt = timeHeaderCell.addText("節");
+  const timeHeaderTxt = timeHeaderCell.addText(I18N.timeColHeader);
   timeHeaderTxt.font = Font.boldSystemFont(9.5);
   timeHeaderTxt.textColor = THEME.secondary;
   timeHeaderTxt.textOpacity = 0.6;
@@ -465,7 +544,8 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
         card.url = course.url;
 
         // 課程名稱
-        const nameTxt = card.addText(course.name);
+        const displayName = getCourseDisplayName(course);
+        const nameTxt = card.addText(displayName);
         nameTxt.font = Font.boldSystemFont(span >= 2 ? 10 : 8.5);
         nameTxt.textColor = colorTheme.text;
         nameTxt.lineLimit = span >= 3 ? 3 : (span >= 2 ? 2 : 1);
@@ -482,7 +562,7 @@ function renderWeeklyView(widget, weekSchedule, currentDayOfWeek, now) {
         // 跨 3 節以上顯示起訖節次資訊
         if (span >= 3) {
           card.addSpacer(1);
-          const timeBadge = card.addText(`${course.firstPeriod}-${course.lastPeriod}節`);
+          const timeBadge = card.addText(`${course.firstPeriod}-${course.lastPeriod}${I18N.periodUnit}`);
           timeBadge.font = Font.systemFont(7.5);
           timeBadge.textColor = colorTheme.sub;
           timeBadge.textOpacity = 0.85;
@@ -520,7 +600,7 @@ function renderMediumView(widget, todayCourses, currentCourse, nextCourse, curre
   leftStack.layoutVertically();
   leftStack.size = new Size(130, 0);
 
-  const titleTxt = leftStack.addText(`週${currentDayOfWeek} · 課表焦點`);
+  const titleTxt = leftStack.addText(I18N.dayFocus(currentDayOfWeek));
   titleTxt.font = Font.mediumSystemFont(11.5);
   titleTxt.textColor = THEME.secondary;
 
@@ -529,13 +609,13 @@ function renderMediumView(widget, todayCourses, currentCourse, nextCourse, curre
   const targetCourse = currentCourse || nextCourse;
   if (targetCourse) {
     const isNow = Boolean(currentCourse);
-    const badge = leftStack.addText(isNow ? "📍 目前上課中" : "⏳ 下一堂課程");
+    const badge = leftStack.addText(isNow ? I18N.inClass : I18N.nextClass);
     badge.font = Font.boldSystemFont(11);
     badge.textColor = isNow ? THEME.warning : THEME.accentGlow;
 
     leftStack.addSpacer(2);
 
-    const nameTxt = leftStack.addText(targetCourse.name);
+    const nameTxt = leftStack.addText(getCourseDisplayName(targetCourse));
     nameTxt.font = Font.boldSystemFont(14.5);
     nameTxt.textColor = THEME.primary;
     nameTxt.lineLimit = 2;
@@ -553,20 +633,20 @@ function renderMediumView(widget, todayCourses, currentCourse, nextCourse, curre
 
     leftStack.addSpacer();
   } else if (todayCourses.length > 0) {
-    const doneTxt = leftStack.addText("🎉 今日課程");
+    const doneTxt = leftStack.addText(I18N.freeDayTitle);
     doneTxt.font = Font.boldSystemFont(14);
     doneTxt.textColor = THEME.success;
 
-    const subTxt = leftStack.addText("已全部結束！好好放鬆休息。");
+    const subTxt = leftStack.addText(I18N.noMoreToday);
     subTxt.font = Font.systemFont(11);
     subTxt.textColor = THEME.secondary;
     leftStack.addSpacer();
   } else {
-    const freeTxt = leftStack.addText("☕ 今日無課");
+    const freeTxt = leftStack.addText(I18N.freeDayTitle);
     freeTxt.font = Font.boldSystemFont(14.5);
     freeTxt.textColor = THEME.accent;
 
-    const subTxt = leftStack.addText("今天沒有排定課堂，自由充實的一天！");
+    const subTxt = leftStack.addText(I18N.noClassToday);
     subTxt.font = Font.systemFont(11);
     subTxt.textColor = THEME.secondary;
     leftStack.addSpacer();
@@ -581,14 +661,14 @@ function renderMediumView(widget, todayCourses, currentCourse, nextCourse, curre
   const rightStack = rootStack.addStack();
   rightStack.layoutVertically();
 
-  const timelineTitle = rightStack.addText("今日課程行程");
+  const timelineTitle = rightStack.addText(USER_LANG === 'en' ? "Today's Schedule" : "今日課程行程");
   timelineTitle.font = Font.boldSystemFont(12);
   timelineTitle.textColor = THEME.primary;
 
   rightStack.addSpacer(4);
 
   if (todayCourses.length === 0) {
-    const emptyNotice = rightStack.addText("好好享受放假時光～");
+    const emptyNotice = rightStack.addText(I18N.freeDaySub);
     emptyNotice.font = Font.systemFont(11);
     emptyNotice.textColor = THEME.secondary;
     rightStack.addSpacer();
@@ -610,7 +690,7 @@ function renderMediumView(widget, todayCourses, currentCourse, nextCourse, curre
       timeTag.textColor = isCurrent ? THEME.accentGlow : (isPast ? THEME.secondary : THEME.accent);
       timeTag.size = new Size(38, 0);
 
-      const cName = row.addText(c.name);
+      const cName = row.addText(getCourseDisplayName(c));
       cName.font = Font.mediumSystemFont(11);
       cName.textColor = isPast ? THEME.secondary : THEME.primary;
       cName.lineLimit = 1;
@@ -630,7 +710,7 @@ function renderMediumView(widget, todayCourses, currentCourse, nextCourse, curre
 // 小尺寸檢視 (Small)
 // -----------------------------------------------------------------------------
 function renderSmallView(widget, currentCourse, nextCourse, currentDayOfWeek, currentMinutes) {
-  const titleTxt = widget.addText(`臺大課表 · 週${currentDayOfWeek}`);
+  const titleTxt = widget.addText(I18N.smallHeader(currentDayOfWeek));
   titleTxt.font = Font.boldSystemFont(12);
   titleTxt.textColor = THEME.accent;
 
@@ -639,13 +719,13 @@ function renderSmallView(widget, currentCourse, nextCourse, currentDayOfWeek, cu
   const target = currentCourse || nextCourse;
   if (target) {
     const isNow = Boolean(currentCourse);
-    const statusTxt = widget.addText(isNow ? "📍 上課中" : "⏳ 下一堂");
+    const statusTxt = widget.addText(isNow ? I18N.smallInClass : I18N.smallNext);
     statusTxt.font = Font.boldSystemFont(11);
     statusTxt.textColor = isNow ? THEME.warning : THEME.accentGlow;
 
     widget.addSpacer(2);
 
-    const nameTxt = widget.addText(target.name);
+    const nameTxt = widget.addText(getCourseDisplayName(target));
     nameTxt.font = Font.boldSystemFont(15);
     nameTxt.textColor = THEME.primary;
     nameTxt.lineLimit = 2;
@@ -662,11 +742,11 @@ function renderSmallView(widget, currentCourse, nextCourse, currentDayOfWeek, cu
     timeTxt.textColor = THEME.secondary;
     widget.addSpacer();
   } else {
-    const freeTxt = widget.addText("🎉 今日無課");
+    const freeTxt = widget.addText(I18N.freeDayTitle);
     freeTxt.font = Font.boldSystemFont(15);
     freeTxt.textColor = THEME.success;
 
-    const subTxt = widget.addText("好好放鬆休息！");
+    const subTxt = widget.addText(I18N.freeDaySub);
     subTxt.font = Font.systemFont(11.5);
     subTxt.textColor = THEME.secondary;
     widget.addSpacer();

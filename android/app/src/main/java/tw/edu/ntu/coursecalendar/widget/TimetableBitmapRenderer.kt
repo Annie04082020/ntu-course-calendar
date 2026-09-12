@@ -285,10 +285,13 @@ object TimetableBitmapRenderer {
                         else -> 1
                     }
 
+                    val isEnglish = CourseRepository(context).isEnglish()
+                    val displayName = course.course.getDisplayName(isEnglish)
+
                     val titleLayout = StaticLayout.Builder.obtain(
-                        course.course.name,
+                        displayName,
                         0,
-                        course.course.name.length,
+                        displayName.length,
                         textPaint,
                         maxTextW
                     )

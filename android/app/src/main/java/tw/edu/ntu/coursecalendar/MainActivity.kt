@@ -103,6 +103,8 @@ fun MainScreen(
 ) {
     var courses by remember { mutableStateOf(repo.getCourses()) }
     var isDemo by remember { mutableStateOf(repo.isUsingDemo()) }
+    var currentLang by remember { mutableStateOf(repo.getLanguage()) }
+    val isEnglish = (currentLang == "en")
     var selectedTab by remember { mutableStateOf(0) }
     var showImportDialog by remember { mutableStateOf(false) }
     var selectedCourseDetail by remember { mutableStateOf<Course?>(null) }
@@ -114,18 +116,40 @@ fun MainScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("臺大課表好朋友", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isEnglish) "NTU Calendar" else "臺大課表好朋友",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Surface(
                             shape = RoundedCornerShape(12.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         ) {
                             Text(
-                                text = if (isDemo) "示範模式" else "個人課表",
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                text = if (isDemo) (if (isEnglish) "Demo" else "示範") else (if (isEnglish) "Personal" else "個人"),
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                             )
                         }
+                    }
+                },
+                actions = {
+                    // 語系切換按鈕 (中 / EN)
+                    FilledTonalButton(
+                        onClick = {
+                            val nextLang = if (isEnglish) "zh" else "en"
+                            repo.setLanguage(nextLang)
+                            currentLang = nextLang
+                        },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text(
+                            text = if (isEnglish) "🌐 中文" else "🌐 EN",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -150,14 +174,14 @@ fun MainScreen(
                     onClick = { showImportDialog = true },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("➕ 貼上匯入代碼")
+                    Text(if (isEnglish) "➕ Paste Code" else "➕ 貼上匯入代碼")
                 }
 
                 OutlinedButton(
                     onClick = onOpenWebsite,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("🌐 開啟課程網頁")
+                    Text(if (isEnglish) "🌐 Open Web" else "🌐 開啟課程網頁")
                 }
             }
 
@@ -169,12 +193,12 @@ fun MainScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("📅 2D 週功課表", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
+                    text = { Text(if (isEnglish) "📅 Timetable" else "📅 2D 週功課表", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("📋 課程清單與設定", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
+                    text = { Text(if (isEnglish) "📋 Course List" else "📋 課程清單與設定", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) }
                 )
             }
 
@@ -197,6 +221,7 @@ fun MainScreen(
                     ) {
                         WeeklyTimetableMatrix(
                             courses = courses,
+                            isEnglish = isEnglish,
                             onCourseClick = { selectedCourseDetail = it }
                         )
                     }
@@ -217,7 +242,10 @@ fun MainScreen(
                             Text("💡", fontSize = 16.sp)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "長按手機桌面空白處 ➔ 點選「微件 / 小工具」➔ 搜尋「臺大課表好朋友」，即可將 2D 週功課表新增至桌面！",
+                                if (isEnglish)
+                                    "Long-press home screen ➔ Select 'Widgets' ➔ Search 'NTU Calendar' to add today's schedule and 2D timetable widgets!"
+                                else
+                                    "長按手機桌面空白處 ➔ 點選「微件 / 小工具」➔ 搜尋「臺大課表好朋友」，即可將 2D 週功課表新增至桌面！",
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -243,14 +271,14 @@ fun MainScreen(
                                 },
                                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                             ) {
-                                Text("🗑️ 清除個人資料並恢復為示範模式")
+                                Text(if (isEnglish) "🗑️ Clear Personal Data (Reset to Demo)" else "🗑️ 清除個人資料並恢復為示範模式")
                             }
                         }
                     }
 
                     item {
                         Text(
-                            "已載入課程 (${courses.size} 門課)",
+                            if (isEnglish) "Enrolled Courses (${courses.size})" else "已載入課程 (${courses.size} 門課)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
@@ -275,39 +303,40 @@ fun MainScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = course.name,
+                                        text = course.getDisplayName(isEnglish),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
                                         modifier = Modifier.weight(1f)
                                     )
-                                    Box(
-                                        modifier = Modifier
-                                            .background(
-                                                if (course.isEnrolled) Color(0xFF10B981) else Color(0xFFF59E0B),
-                                                RoundedCornerShape(4.dp)
-                                            )
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    val statusText = if (course.isEnrolled) {
+                                        if (isEnglish) "Enrolled" else "正選"
+                                    } else {
+                                        if (isEnglish) "Waitlist" else "候補"
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = if (course.isEnrolled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
                                     ) {
                                         Text(
-                                            text = if (course.isEnrolled) "正選" else "候補",
-                                            color = Color.White,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold
+                                            text = statusText,
+                                            fontSize = 11.sp,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
-                                val loc = course.locations?.joinToString("、") ?: "未註明地點"
-                                val teacher = if (course.instructor.isNullOrBlank()) "" else " · " + course.instructor
+                                val loc = course.locations?.joinToString("、") ?: (if (isEnglish) "Location TBA" else "未註明地點")
+                                val instructor = if (isEnglish && !course.instructorEn.isNullOrBlank()) course.instructorEn else course.instructor
+                                val teacher = if (instructor.isNullOrBlank()) "" else " · $instructor"
                                 Text(
                                     text = "📍 " + loc + teacher,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
 
-                                val timeSlots = course.timeSlots?.joinToString("，") ?: "未排定時間"
+                                val timeSlots = course.timeSlots?.joinToString("，") ?: (if (isEnglish) "TBA" else "未排定時間")
                                 Text(
                                     text = "⏰ $timeSlots",
                                     fontSize = 12.sp,
@@ -326,15 +355,26 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = { selectedCourseDetail = null },
             title = {
-                Text(course.name, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(course.getDisplayName(isEnglish), fontWeight = FontWeight.Bold, fontSize = 17.sp)
             },
             text = {
+                val instructor = if (isEnglish && !course.instructorEn.isNullOrBlank()) course.instructorEn else (course.instructor ?: (if (isEnglish) "N/A" else "未註明"))
+                val remarks = if (isEnglish && !course.remarksEn.isNullOrBlank()) course.remarksEn else course.remarks
+                val desc = if (isEnglish && !course.descriptionEn.isNullOrBlank()) course.descriptionEn else course.description
+
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("👨‍🏫 授課教師：${course.instructor ?: "未註明"}", fontSize = 14.sp)
-                    Text("📍 教室地點：${course.locations?.joinToString("、") ?: "依系所公告"}", fontSize = 14.sp)
-                    Text("⏰ 上課節次：${course.timeSlots?.joinToString("，") ?: "未排定"}", fontSize = 14.sp)
-                    val enrolledText = if (course.isEnrolled) "正選" else "候補"
-                    Text("📌 選課狀態：" + enrolledText, fontSize = 14.sp)
+                    Text((if (isEnglish) "👨‍🏫 Instructor: " else "👨‍🏫 授課教師：") + instructor, fontSize = 14.sp)
+                    Text((if (isEnglish) "📍 Location: " else "📍 教室地點：") + (course.locations?.joinToString("、") ?: (if (isEnglish) "TBA" else "依系所公告")), fontSize = 14.sp)
+                    Text((if (isEnglish) "⏰ Schedule: " else "⏰ 上課節次：") + (course.timeSlots?.joinToString("，") ?: (if (isEnglish) "TBA" else "未排定")), fontSize = 14.sp)
+                    val enrolledText = if (course.isEnrolled) (if (isEnglish) "Enrolled" else "正選") else (if (isEnglish) "Waitlist" else "候補")
+                    Text((if (isEnglish) "📌 Status: " else "📌 選課狀態：") + enrolledText, fontSize = 14.sp)
+
+                    if (!remarks.isNullOrBlank()) {
+                        Text((if (isEnglish) "📝 Notes: " else "📝 備註：") + remarks, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (!desc.isNullOrBlank()) {
+                        Text((if (isEnglish) "📖 Syllabus: " else "📖 課程簡介：") + desc.take(200) + (if (desc.length > 200) "..." else ""), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             },
             confirmButton = {
@@ -406,6 +446,7 @@ fun MainScreen(
 @Composable
 fun WeeklyTimetableMatrix(
     courses: List<Course>,
+    isEnglish: Boolean = false,
     onCourseClick: (Course) -> Unit
 ) {
     val weekSchedule = remember(courses) { CourseParser.buildWeekSchedule(courses) }
@@ -472,7 +513,7 @@ fun WeeklyTimetableMatrix(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "節次",
+                    text = if (isEnglish) "Period" else "節次",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -587,7 +628,7 @@ fun WeeklyTimetableMatrix(
                                         .padding(horizontal = 3.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = scheduled.course.name,
+                                        text = scheduled.course.getDisplayName(isEnglish),
                                         color = theme.text,
                                         fontSize = if (span >= 2) 11.sp else 10.sp,
                                         fontWeight = FontWeight.Bold,

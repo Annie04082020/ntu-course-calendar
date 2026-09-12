@@ -133,14 +133,20 @@ function cleanCourseTitle(rawName, code, serial, identifier) {
   return name || rawName.trim();
 }
 
-function generateICS(courses, semesterStart, totalWeeks, calTitle = '臺大課程表 115-1') {
+function generateICS(courses, semesterStart, totalWeeks, calTitle = '臺大課程表 115-1', lang = 'zh') {
+  const isEn = (lang === 'en');
+  const isBi = (lang === 'bilingual');
+
+  const actualTitle = isEn ? 'NTU Course Schedule 115-1' : (isBi ? '臺大課程表 NTU Schedule 115-1' : calTitle);
+  const prodId = isEn ? '-//NTU Course Calendar Exporter//EN' : '-//NTU Course Calendar Exporter//ZH-TW';
+
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//NTU Course Calendar Exporter//ZH-TW',
+    'PRODID:' + prodId,
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:' + calTitle,
+    'X-WR-CALNAME:' + actualTitle,
     'X-WR-TIMEZONE:Asia/Taipei',
     'BEGIN:VTIMEZONE',
     'TZID:Asia/Taipei',
@@ -166,24 +172,57 @@ function generateICS(courses, semesterStart, totalWeeks, calTitle = '臺大課�
         const dtStart = formatICSDateTime(eventDate, pStart.start[0], pStart.start[1]);
         const dtEnd = formatICSDateTime(eventDate, pEnd.end[0], pEnd.end[1]);
 
-        const descParts = [];
-        if (course.isEnrolled === false) {
-          descParts.push('⚠️【選課狀態】：志願排隊中（未選上）');
-        } else {
-          descParts.push('✅【選課狀態】：已選上');
-        }
-        if (course.instructor) descParts.push('授課教師：' + course.instructor);
-        if (course.code) descParts.push('課號：' + course.code);
-        if (course.serial) descParts.push('流水號：' + course.serial);
-        if (course.identifier) descParts.push('課程識別碼：' + course.identifier);
-        if (course.locations.length) descParts.push('教室：' + course.locations.join('、'));
-        if (course.remarks) descParts.push('備註：' + course.remarks);
-        if (course.description) descParts.push('\n【課程概述】\n' + course.description);
-        descParts.push('\n課程網址：' + course.url);
+        const cleanZhName = cleanCourseTitle(course.name, course.code, course.serial, course.identifier);
+        const cleanEnName = course.nameEn ? cleanCourseTitle(course.nameEn, course.code, course.serial, course.identifier) : '';
 
-        const locationText = course.locations.join('、') || '未定 / 依課程公告';
-        const cleanName = cleanCourseTitle(course.name, course.code, course.serial, course.identifier);
-        const summaryText = (course.isEnrolled === false ? '[候補] ' : '') + cleanName;
+        let eventName = cleanZhName;
+        let waitlistTag = '[候補] ';
+        if (isEn) {
+          eventName = cleanEnName || cleanZhName;
+          waitlistTag = '[Waitlist] ';
+        } else if (isBi) {
+          eventName = cleanEnName ? (cleanEnName + ' ' + cleanZhName) : cleanZhName;
+          waitlistTag = '[候補/Waitlist] ';
+        }
+
+        const summaryText = (course.isEnrolled === false ? waitlistTag : '') + eventName;
+
+        const descParts = [];
+        if (isEn) {
+          descParts.push(course.isEnrolled === false ? '⚠️ [Status]: Waiting list (Not Enrolled)' : '✅ [Status]: Enrolled');
+          if (course.instructorEn || course.instructor) descParts.push('Instructor: ' + (course.instructorEn || course.instructor));
+          if (course.code) descParts.push('Course No.: ' + course.code);
+          if (course.serial) descParts.push('Serial No.: ' + course.serial);
+          if (course.identifier) descParts.push('Course ID: ' + course.identifier);
+          if (course.locations && course.locations.length) descParts.push('Classroom: ' + course.locations.join(', '));
+          if (course.remarksEn || course.remarks) descParts.push('Notes: ' + (course.remarksEn || course.remarks));
+          if (course.descriptionEn || course.description) descParts.push('\n[Course Description]\n' + (course.descriptionEn || course.description));
+          const enCourseUrl = (course.url && !course.url.includes('/en/courses/')) ? course.url.replace('/courses/', '/en/courses/') : (course.url || '');
+          if (enCourseUrl) descParts.push('\nCourse URL: ' + enCourseUrl);
+        } else if (isBi) {
+          descParts.push(course.isEnrolled === false ? '⚠️【選課狀態 / Status】：志願排隊中 / Waiting list' : '✅【選課狀態 / Status】：已選上 / Enrolled');
+          if (course.instructor) descParts.push('授課教師 / Instructor：' + course.instructor + (course.instructorEn ? ` (${course.instructorEn})` : ''));
+          if (course.code) descParts.push('課號 / Course No.：' + course.code);
+          if (course.serial) descParts.push('流水號 / Serial No.：' + course.serial);
+          if (course.identifier) descParts.push('課程識別碼 / Course ID：' + course.identifier);
+          if (course.locations && course.locations.length) descParts.push('教室 / Location：' + course.locations.join('、'));
+          if (course.remarks || course.remarksEn) descParts.push('備註 / Notes：' + (course.remarks || '') + (course.remarksEn ? `\n[Notes] ${course.remarksEn}` : ''));
+          if (course.description) descParts.push('\n【課程概述】\n' + course.description);
+          if (course.descriptionEn) descParts.push('\n【Course Description】\n' + course.descriptionEn);
+          if (course.url) descParts.push('\n課程網址 / URL：' + course.url);
+        } else {
+          descParts.push(course.isEnrolled === false ? '⚠️【選課狀態】：志願排隊中（未選上）' : '✅【選課狀態】：已選上');
+          if (course.instructor) descParts.push('授課教師：' + course.instructor);
+          if (course.code) descParts.push('課號：' + course.code);
+          if (course.serial) descParts.push('流水號：' + course.serial);
+          if (course.identifier) descParts.push('課程識別碼：' + course.identifier);
+          if (course.locations.length) descParts.push('教室：' + course.locations.join('、'));
+          if (course.remarks) descParts.push('備註：' + course.remarks);
+          if (course.description) descParts.push('\n【課程概述】\n' + course.description);
+          descParts.push('\n課程網址：' + course.url);
+        }
+
+        const locationText = course.locations.join('、') || (isEn ? 'TBA' : '未定 / 依課程公告');
 
         const uid = 'ntu-' + (course.serial || 'course') + '-' + (WEEKDAY_RRULE[group.weekday] || 'D') + group.startPeriod + '-' + Math.random().toString(36).slice(2, 9) + '@course.ntu.edu.tw';
         lines.push(
@@ -211,8 +250,10 @@ function generateICS(courses, semesterStart, totalWeeks, calTitle = '臺大課�
 const allCourses = [
   {
     name: '生醫資訊學導論',
+    nameEn: 'Introduction to Biomedical Informatics',
     isEnrolled: true,
     instructor: '曾宇鳳',
+    instructorEn: 'Yu-Feng Tseng',
     locations: ['資103'],
     timeSlots: ['四 2,3,4'],
     code: 'CSIE5122',
@@ -221,12 +262,16 @@ const allCourses = [
     credits: 3,
     url: 'https://course.ntu.edu.tw/courses/115-1/10359',
     remarks: '限學士班四年級以上。分子醫學所/智慧健康資訊本課程以英語授課。',
-    description: 'This course provides an introduction to bioinformatics and computational biology, covering genomics, proteomics, molecular modeling, and medical informatics applications.'
+    remarksEn: 'Taught in English.',
+    description: 'This course provides an introduction to bioinformatics and computational biology, covering genomics, proteomics, molecular modeling, and medical informatics applications.',
+    descriptionEn: 'This course provides an introduction to bioinformatics and computational biology, covering genomics, proteomics, molecular modeling, and medical informatics applications.'
   },
   {
     name: '生醫信號研究方法',
+    nameEn: 'Research Methods in Biomedical Signals',
     isEnrolled: true,
     instructor: '吳文超',
+    instructorEn: 'Wen-Chao Wu',
     locations: ['依系所公告'],
     timeSlots: ['一 6,7,8'],
     code: 'MHI7010',
@@ -235,12 +280,16 @@ const allCourses = [
     credits: 3,
     url: 'https://course.ntu.edu.tw/courses/115-1/13160',
     remarks: '醫學健康資訊研究所碩士班核心課程。',
-    description: '本課程深入介紹生醫信號（EEG, ECG, fMRI, 生理穿戴裝置信號等）之擷取、濾波、時頻域分析、特徵萃取與現代機器學習生醫應用。'
+    remarksEn: 'Core course for Master program.',
+    description: '本課程深入介紹生醫信號（EEG, ECG, fMRI, 生理穿戴裝置信號等）之擷取、濾波、時頻域分析、特徵萃取與現代機器學習生醫應用。',
+    descriptionEn: 'Introduction to biomedical signal acquisition, filtering, time-frequency analysis, and machine learning.'
   },
   {
     name: '機器學習',
+    nameEn: 'Machine Learning',
     isEnrolled: true,
     instructor: '劉子毓',
+    instructorEn: 'Tzu-Yu Liu',
     locations: ['電二143'],
     timeSlots: ['三 2,3,4,5'],
     code: 'EE5184',
@@ -249,12 +298,16 @@ const allCourses = [
     credits: 4,
     url: 'https://course.ntu.edu.tw/courses/115-1/13707',
     remarks: '班次01。本課程以英語授課。',
-    description: 'The machine learning course is a comprehensive program designed to engage in data-driven decision-making. Throughout the course, students will learn to develop and evaluate various predictive models across real-world datasets.'
+    remarksEn: 'Class 01. Taught in English.',
+    description: 'The machine learning course is a comprehensive program designed to engage in data-driven decision-making. Throughout the course, students will learn to develop and evaluate various predictive models across real-world datasets.',
+    descriptionEn: 'The machine learning course is a comprehensive program designed to engage in data-driven decision-making. Throughout the course, students will learn to develop and evaluate various predictive models across real-world datasets.'
   },
   {
     name: '專題討論',
+    nameEn: 'Seminar',
     isEnrolled: true,
     instructor: '徐翡曼',
+    instructorEn: 'Fei-Man Hsu',
     locations: ['依系所公告'],
     timeSlots: ['一 3,4'],
     code: 'MHI7100',
@@ -263,12 +316,16 @@ const allCourses = [
     credits: 1,
     url: 'https://course.ntu.edu.tw/courses/115-1/22882',
     remarks: '班次01。醫學健康資訊研究所碩士班專題研討。',
-    description: '本課程旨在培養學生文獻研讀、邏輯思考及專業學術簡報討論之能力，邀請領域學者專家及學生進行專題報告。'
+    remarksEn: 'Class 01. Seminar for Master students.',
+    description: '本課程旨在培養學生文獻研讀、邏輯思考及專業學術簡報討論之能力，邀請領域學者專家及學生進行專題報告。',
+    descriptionEn: 'Developing literature review and professional scientific presentation skills.'
   },
   {
     name: '智慧醫療與健康資訊學',
+    nameEn: 'Smart Healthcare and Health Informatics',
     isEnrolled: true,
     instructor: '陳玫如',
+    instructorEn: 'Mei-Ju Chen',
     locations: ['綜合教學館701教室'],
     timeSlots: ['五 3,4'],
     code: 'MHI7400',
@@ -277,12 +334,16 @@ const allCourses = [
     credits: 2,
     url: 'https://course.ntu.edu.tw/courses/115-1/26409',
     remarks: '本課程以英語授課。上課教室:綜合教學館701教室。',
-    description: '本課程涵蓋智慧醫療、電子病歷系統、健康巨量資料分析、醫療影像AI輔助診斷等核心醫療資訊技術與實務應用。'
+    remarksEn: 'Taught in English. Room 701, General Building.',
+    description: '本課程涵蓋智慧醫療、電子病歷系統、健康巨量資料分析、醫療影像AI輔助診斷等核心醫療資訊技術與實務應用。',
+    descriptionEn: 'Smart healthcare, electronic health records, big data analytics, and AI medical imaging.'
   },
   {
     name: '教育哲學',
+    nameEn: 'Philosophy of Education',
     isEnrolled: true,
     instructor: '許育萍',
+    instructorEn: 'Yu-Ping Hsu',
     locations: ['新聞所203'],
     timeSlots: ['四 6,7'],
     code: 'EduTch5104',
@@ -291,12 +352,16 @@ const allCourses = [
     credits: 2,
     url: 'https://course.ntu.edu.tw/courses/115-1/56815',
     remarks: '教育基礎課程，上課地點新聞所203。',
-    description: '探討西方與東方教育哲學思想史，分析教育本質、知識論、倫理學在現代教學與教育政策中的反思與實踐。'
+    remarksEn: 'Graduate Institute of Journalism Room 203.',
+    description: '探討西方與東方教育哲學思想史，分析教育本質、知識論、倫理學在現代教學與教育政策中的反思與實踐。',
+    descriptionEn: 'History of Western and Eastern educational philosophy and ethical reflection.'
   },
   {
     name: '人體結構與生命現象',
+    nameEn: 'Human Structure and Life Phenomena',
     isEnrolled: false,
     instructor: '黃韻如',
+    instructorEn: 'Yun-Ju Huang',
     locations: ['基醫406'],
     timeSlots: ['二 2,3,4'],
     code: 'DBME7040',
@@ -305,7 +370,9 @@ const allCourses = [
     credits: 3,
     url: 'https://course.ntu.edu.tw/courses/115-1/45228',
     remarks: '衝堂志願1 (待分發)。醫工所本課程以英語授課。合授老師:張允亮、吳培甄、吳振吉、林靜嫻、紀乃新等。',
-    description: '本課程以器官系統為架構，講授人體之巨觀與微觀解剖構造、正常生理運作機制以及與重大疾病相關之生命現象，建立跨領域生物醫學工程基礎。'
+    remarksEn: 'Taught in English.',
+    description: '本課程以器官系統為架構，講授人體之巨觀與微觀解剖構造、正常生理運作機制以及與重大疾病相關之生命現象，建立跨領域生物醫學工程基礎。',
+    descriptionEn: 'Anatomy and physiology of human organ systems and underlying life phenomena.'
   }
 ];
 

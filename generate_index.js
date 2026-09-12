@@ -42,7 +42,7 @@ const html = `<!DOCTYPE html>
           </svg>
         </div>
         <div class="brand-title">
-          臺大課程日曆好朋友
+          <span id="app-brand-name">臺大課程日曆好朋友</span>
           <span class="mode-tag demo" id="app-mode-badge">示範預覽模式</span>
         </div>
       </div>
@@ -61,17 +61,23 @@ const html = `<!DOCTYPE html>
 
       <!-- Nav Actions -->
       <div class="nav-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switch-group" id="nav-lang-switcher">
+          <button class="btn-lang-toggle active" id="btn-lang-zh">中文</button>
+          <button class="btn-lang-toggle" id="btn-lang-en">EN</button>
+        </div>
+
         <button class="btn-nav-action" id="btn-open-bm-modal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          書籤小工具
+          <span id="nav-lbl-bm">書籤小工具</span>
         </button>
         <button class="btn-nav-action" id="btn-open-import-modal">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-          代碼匯入
+          <span id="nav-lbl-import">代碼匯入</span>
         </button>
         <button class="btn-nav-action" id="btn-open-scriptable-modal" title="匯出至 iPhone / iPad 桌面小工具">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          iOS 小工具
+          <span id="nav-lbl-ios">iOS 小工具</span>
         </button>
         <button class="btn-nav-action" id="btn-open-android-modal" title="匯出至 Android 原生桌面小工具 App">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 16V8a7 7 0 0 1 14 0v8"/><line x1="8" y1="3" x2="6" y2="1"/><line x1="16" y1="3" x2="18" y2="1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><rect x="5" y="16" width="14" height="5" rx="1"/></svg>
@@ -83,7 +89,7 @@ const html = `<!DOCTYPE html>
         </button>
         <button class="btn-nav-primary" id="btn-nav-quick-dl">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          匯出日曆 (.ics)
+          <span id="nav-lbl-ics">匯出日曆 (.ics)</span>
         </button>
       </div>
     </header>
@@ -95,7 +101,7 @@ const html = `<!DOCTYPE html>
         <div class="timetable-toolbar">
           <div class="toolbar-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            一週課表時間矩陣
+            <span id="toolbar-title-text">一週課表時間矩陣</span>
           </div>
           <div class="filter-pills">
             <button class="filter-pill active" id="f-all">全部</button>
@@ -116,7 +122,7 @@ const html = `<!DOCTYPE html>
         <div class="sidebar-header">
           <div class="sidebar-title">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            課程清單
+            <span id="sidebar-title-text">課程清單</span>
           </div>
           <div class="bulk-actions">
             <button class="bulk-link" id="btn-sel-all">全選</button>
@@ -138,15 +144,15 @@ const html = `<!DOCTYPE html>
           </div>
           <button class="btn-primary-block" id="btn-sidebar-dl">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            下載勾選課程行事曆 (.ics)
+            <span id="lbl-sidebar-dl">下載勾選課程行事曆 (.ics)</span>
           </button>
           <button class="btn-secondary-block" id="btn-sidebar-scriptable" style="margin-top:8px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 14px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:var(--radius-sm); color:#60a5fa; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-            產生 iOS / iPad 桌面小工具
+            <span id="lbl-sidebar-ios">產生 iOS / iPad 桌面小工具</span>
           </button>
           <button class="btn-secondary-block" id="btn-sidebar-android" style="margin-top:6px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 14px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); border-radius:var(--radius-sm); color:#34d399; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 16V8a7 7 0 0 1 14 0v8"/><line x1="8" y1="3" x2="6" y2="1"/><line x1="16" y1="3" x2="18" y2="1"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><rect x="5" y="16" width="14" height="5" rx="1"/></svg>
-            Android 原生小工具 App
+            <span id="lbl-sidebar-android">Android 原生小工具 App</span>
           </button>
         </div>
       </aside>
@@ -259,11 +265,23 @@ const html = `<!DOCTYPE html>
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
-          <input type="checkbox" id="exp-mark-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer; width:16px; height:16px;">
-          <label for="exp-mark-waitlist" style="font-size:13px; color:var(--text-secondary); cursor:pointer;">
-            未選上志願課程標題加上 <strong style="color:var(--status-waitlist)">[候補]</strong> 標記
-          </label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">
+              輸出語言版本 (Language)
+            </label>
+            <select id="exp-lang-select" style="width:100%; box-sizing:border-box; padding:9px 12px; background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); font-family:inherit; font-size:13px; cursor:pointer;">
+              <option value="zh" style="background:#1e293b; color:#fff;">繁體中文 (Chinese)</option>
+              <option value="en" style="background:#1e293b; color:#fff;">English (NTU Official)</option>
+              <option value="bilingual" style="background:#1e293b; color:#fff;">中英雙語 (Bilingual)</option>
+            </select>
+          </div>
+          <div style="display:flex; align-items:center; padding-top:20px;">
+            <input type="checkbox" id="exp-mark-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer; width:16px; height:16px;">
+            <label for="exp-mark-waitlist" style="font-size:12.5px; color:var(--text-secondary); cursor:pointer; margin-left:8px;">
+              未選上標記 <strong style="color:var(--status-waitlist)">[候補]</strong>
+            </label>
+          </div>
         </div>
 
         <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:18px;">
@@ -318,11 +336,21 @@ const html = `<!DOCTYPE html>
           </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; flex-wrap:wrap; gap:8px;">
           <span style="font-size: 12.5px; font-weight: 600; color: var(--text-secondary);" id="scriptable-courses-count">已收錄 0 門課程代碼</span>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <input type="checkbox" id="scriptable-include-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer;">
-            <label for="scriptable-include-waitlist" style="font-size:12px; color:var(--text-secondary); cursor:pointer;">包含志願候補課程</label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <label for="scriptable-lang-select" style="font-size:12px; color:var(--text-secondary);">語言：</label>
+              <select id="scriptable-lang-select" style="padding:3px 8px; font-size:12px; background:rgba(255,255,255,0.08); border:1px solid var(--border-subtle); border-radius:var(--radius-xs); color:var(--text-primary); cursor:pointer;">
+                <option value="zh" style="background:#1e293b; color:#fff;">繁體中文</option>
+                <option value="en" style="background:#1e293b; color:#fff;">English</option>
+                <option value="bilingual" style="background:#1e293b; color:#fff;">雙語</option>
+              </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="checkbox" id="scriptable-include-waitlist" checked style="accent-color:var(--status-waitlist); cursor:pointer;">
+              <label for="scriptable-include-waitlist" style="font-size:12px; color:var(--text-secondary); cursor:pointer;">包含候補</label>
+            </div>
           </div>
         </div>
 
@@ -473,8 +501,10 @@ const html = `<!DOCTYPE html>
       {
         id: "demo-1",
         name: "微積分甲 (一)",
+        nameEn: "CALCULUS (1)",
         isEnrolled: true,
         instructor: "齊震宇",
+        instructorEn: "Chen-Yu Chi",
         locations: ["共同101"],
         timeSlots: ["一 3,4", "三 3,4"],
         code: "MATH4006",
@@ -482,14 +512,18 @@ const html = `<!DOCTYPE html>
         identifier: "201 10110",
         credits: 4,
         remarks: "大一基礎數理核心課程。",
+        remarksEn: "Freshman core mathematical foundation.",
         url: "https://course.ntu.edu.tw",
-        description: "本課程為基礎微積分，涵蓋單變數函數極限、連續性、微分、定積分運算技巧及多元微積分初階。"
+        description: "本課程為基礎微積分，涵蓋單變數函數極限、連續性、微分、定積分運算技巧及多元微積分初階。",
+        descriptionEn: "This is a basic calculus course covering limits, continuity, differentiation, integration techniques, and an introduction to multivariable calculus."
       },
       {
         id: "demo-2",
         name: "普通物理學甲 (一)",
+        nameEn: "GENERAL PHYSICS (1)",
         isEnrolled: true,
         instructor: "張寶棣",
+        instructorEn: "Pao-Ti Chang",
         locations: ["普物館102"],
         timeSlots: ["二 2,3,4"],
         code: "PHYS1001",
@@ -497,14 +531,18 @@ const html = `<!DOCTYPE html>
         identifier: "202 10210",
         credits: 3,
         remarks: "涵蓋古典牛頓力學、熱力學基礎。",
+        remarksEn: "Covers classical mechanics and thermodynamics.",
         url: "https://course.ntu.edu.tw",
-        description: "系統性講授牛頓運動定律、能量守恆、動量守恆、剛體轉動、流體與熱物理基礎現象與數學建模。"
+        description: "系統性講授牛頓運動定律、能量守恆、動量守恆、剛體轉動、流體與熱物理基礎現象與數學建模。",
+        descriptionEn: "Systematic introduction to Newton's laws of motion, conservation of energy and momentum, rigid body rotation, fluids, and thermodynamics."
       },
       {
         id: "demo-3",
         name: "計算機程式設計",
+        nameEn: "Computer Programming",
         isEnrolled: true,
         instructor: "鄭卜壬",
+        instructorEn: "Pu-Jen Cheng",
         locations: ["資101"],
         timeSlots: ["四 6,7,8"],
         code: "CSIE1210",
@@ -512,14 +550,18 @@ const html = `<!DOCTYPE html>
         identifier: "902 10310",
         credits: 3,
         remarks: "C / C++ 程式語言核心思維與實作。",
+        remarksEn: "Core concepts and implementation in C/C++.",
         url: "https://course.ntu.edu.tw",
-        description: "學習現代程式設計核心邏輯、變數型態、流程控制、指標與動態記憶體配置、結構體與演算法思維。"
+        description: "學習現代程式設計核心邏輯、變數型態、流程控制、指標與動態記憶體配置、結構體與演算法思維。",
+        descriptionEn: "Introduction to programming fundamentals, control flow, pointers, dynamic memory allocation, and algorithmic thinking."
       },
       {
         id: "demo-4",
         name: "資料結構與演算法",
+        nameEn: "Data Structures and Algorithms",
         isEnrolled: true,
         instructor: "呂學一",
+        instructorEn: "Hsueh-I Lu",
         locations: ["博理101"],
         timeSlots: ["五 2,3,4"],
         code: "CSIE2112",
@@ -527,14 +569,18 @@ const html = `<!DOCTYPE html>
         identifier: "902 20110",
         credits: 3,
         remarks: "核心資訊科學專業課程。",
+        remarksEn: "Core computer science curriculum.",
         url: "https://course.ntu.edu.tw",
-        description: "深入探討陣列、鏈結串列、堆疊、佇列、樹狀結構、圖形走訪、排序搜尋與時間複雜度分析。"
+        description: "深入探討陣列、鏈結串列、堆疊、佇列、樹狀結構、圖形走訪、排序搜尋與時間複雜度分析。",
+        descriptionEn: "In-depth exploration of arrays, linked lists, stacks, queues, trees, graphs, sorting, searching, and complexity analysis."
       },
       {
         id: "demo-5",
         name: "大學英文 (一)",
+        nameEn: "College English (1)",
         isEnrolled: true,
         instructor: "外籍教師群",
+        instructorEn: "Faculty Group",
         locations: ["外教105"],
         timeSlots: ["三 6,7"],
         code: "DFLL1001",
@@ -542,14 +588,18 @@ const html = `<!DOCTYPE html>
         identifier: "102 10510",
         credits: 2,
         remarks: "全英語授課與學術溝通表達。",
+        remarksEn: "Taught in English. Academic presentation.",
         url: "https://course.ntu.edu.tw",
-        description: "訓練大學生學術英文閱讀、論文結構摘要、口語簡報與批判性思考討論能力。"
+        description: "訓練大學生學術英文閱讀、論文結構摘要、口語簡報與批判性思考討論能力。",
+        descriptionEn: "Training in academic reading, research summarization, oral presentation, and critical thinking."
       },
       {
         id: "demo-6",
         name: "體育 (健康體適能)",
+        nameEn: "Physical Education: Health and Fitness",
         isEnrolled: true,
         instructor: "體育室教師",
+        instructorEn: "PE Faculty",
         locations: ["綜合體育館"],
         timeSlots: ["二 6,7"],
         code: "PE1001",
@@ -557,14 +607,18 @@ const html = `<!DOCTYPE html>
         identifier: "000 10610",
         credits: 1,
         remarks: "基礎核心體能與健康生活管理。",
+        remarksEn: "Physical fitness and active lifestyle.",
         url: "https://course.ntu.edu.tw",
-        description: "藉由多樣化運動訓練與有氧肌耐力教學，培養長期規律運動習慣與體能維護技巧。"
+        description: "藉由多樣化運動訓練與有氧肌耐力教學，培養長期規律運動習慣與體能維護技巧。",
+        descriptionEn: "Developing regular exercise habits and fitness through structured training routines."
       },
       {
         id: "demo-7",
-        name: "人工智慧導論",
+        name: "機器學習導論",
+        nameEn: "Introduction to Machine Learning",
         isEnrolled: false,
         instructor: "李宏毅",
+        instructorEn: "Hung-yi Lee",
         locations: ["電二143"],
         timeSlots: ["一 7,8,9"],
         code: "EE5184",
@@ -572,8 +626,10 @@ const html = `<!DOCTYPE html>
         identifier: "921 51840",
         credits: 3,
         remarks: "志願分發中 (候補第 3 順位)。",
+        remarksEn: "Waitlist priority #3.",
         url: "https://course.ntu.edu.tw",
-        description: "介紹機器學習、深度神經網路、自注意力機制、自然語言處理與生成式人工智慧核心概念。"
+        description: "介紹機器學習、深度神經網路、自注意力機制、自然語言處理與生成式人工智慧核心概念。",
+        descriptionEn: "Introduction to machine learning, deep neural networks, self-attention, NLP, and generative AI."
       }
     ];
 
@@ -584,6 +640,25 @@ const html = `<!DOCTYPE html>
     let isDemoMode = false;
     let activeFilter = 'all'; // 'all' | 'enrolled' | 'waitlist'
     let selectedCourseIds = new Set();
+    let currentLang = localStorage.getItem('ntu_lang') || 'zh'; // 'zh' | 'en'
+
+    function getCourseDisplayName(course) {
+      if (!course) return '';
+      const cleanZh = cleanCourseTitle(course.name, course.code, course.serial, course.identifier);
+      if (currentLang === 'en') {
+        const cleanEn = cleanCourseTitle(course.nameEn, course.code, course.serial, course.identifier);
+        return cleanEn || cleanZh;
+      }
+      return cleanZh;
+    }
+
+    function getCourseInstructor(course) {
+      if (!course) return '';
+      if (currentLang === 'en' && course.instructorEn) {
+        return course.instructorEn;
+      }
+      return course.instructor || (currentLang === 'en' ? 'TBA' : '依公告');
+    }
 
     const STORAGE_KEY = 'ntu_course_calendar_custom_data';
 
@@ -643,14 +718,61 @@ const html = `<!DOCTYPE html>
     // 渲染課表矩陣與側邊欄
     // =========================================================================
     function renderApp() {
+      const isEn = (currentLang === 'en');
+
+      // 更新語系按鈕外觀
+      const btnZh = document.getElementById('btn-lang-zh');
+      const btnEn = document.getElementById('btn-lang-en');
+      if (btnZh && btnEn) {
+        btnZh.classList.toggle('active', !isEn);
+        btnEn.classList.toggle('active', isEn);
+      }
+
+      // 更新頂部導覽列按鈕文字
+      const navBm = document.getElementById('nav-lbl-bm');
+      const navImport = document.getElementById('nav-lbl-import');
+      const navIos = document.getElementById('nav-lbl-ios');
+      const navReset = document.getElementById('btn-reset-text');
+      const navIcs = document.getElementById('nav-lbl-ics');
+      if (navBm) navBm.textContent = isEn ? 'Bookmarklet' : '書籤小工具';
+      if (navImport) navImport.textContent = isEn ? 'Import Code' : '代碼匯入';
+      if (navIos) navIos.textContent = isEn ? 'iOS Widget' : 'iOS 小工具';
+      if (navReset) navReset.textContent = isEn ? 'Reset / Demo' : '清除/示範';
+      if (navIcs) navIcs.textContent = isEn ? 'Export ICS' : '匯出日曆 (.ics)';
+
+      const brandName = document.getElementById('app-brand-name');
+      if (brandName) brandName.textContent = isEn ? 'NTU Course Schedule Buddy' : '臺大課程日曆好朋友';
+
+      const tbTitle = document.getElementById('toolbar-title-text');
+      if (tbTitle) tbTitle.textContent = isEn ? 'Weekly Timetable Matrix' : '一週課表時間矩陣';
+
+      const sbTitle = document.getElementById('sidebar-title-text');
+      if (sbTitle) sbTitle.textContent = isEn ? 'Course List' : '課程清單';
+
+      const btnAll = document.getElementById('btn-sel-all');
+      if (btnAll) btnAll.textContent = isEn ? 'All' : '全選';
+      const btnNone = document.getElementById('btn-unsel-all');
+      if (btnNone) btnNone.textContent = isEn ? 'None' : '全不選';
+      const btnEnr = document.getElementById('btn-sel-enrolled');
+      if (btnEnr) btnEnr.textContent = isEn ? 'Enrolled' : '僅已選上';
+
+      const lblDl = document.getElementById('lbl-sidebar-dl');
+      if (lblDl) lblDl.textContent = isEn ? 'Download Selected (.ics)' : '下載勾選課程行事曆 (.ics)';
+
+      const lblIos = document.getElementById('lbl-sidebar-ios');
+      if (lblIos) lblIos.textContent = isEn ? 'Generate iOS / iPad Widget' : '產生 iOS / iPad 桌面小工具';
+
+      const lblAndroid = document.getElementById('lbl-sidebar-android');
+      if (lblAndroid) lblAndroid.textContent = isEn ? 'Android Native Widget App' : 'Android 原生小工具 App';
+
       // 1. 更新頂部狀態標籤與統計數據
       const modeBadge = document.getElementById('app-mode-badge');
       if (isDemoMode) {
         modeBadge.className = 'mode-tag demo';
-        modeBadge.textContent = '示範預覽模式 (尚未同步)';
+        modeBadge.textContent = isEn ? 'Demo Mode (Unsynced)' : '示範預覽模式 (尚未同步)';
       } else {
         modeBadge.className = 'mode-tag synced';
-        modeBadge.textContent = '個人專屬課表 🟢';
+        modeBadge.textContent = isEn ? 'Personal Schedule 🟢' : '個人專屬課表 🟢';
       }
 
       const enrolledCourses = courses.filter(c => c.isEnrolled);
@@ -659,12 +781,16 @@ const html = `<!DOCTYPE html>
       const enrolledCredits = enrolledCourses.reduce((acc, c) => acc + (Number(c.credits) || 0), 0);
       const waitlistCredits = waitlistCourses.reduce((acc, c) => acc + (Number(c.credits) || 0), 0);
 
-      document.getElementById('stat-enrolled-text').textContent = \`已選上 \${enrolledCourses.length} 門 · \${enrolledCredits} 學分\`;
-      document.getElementById('stat-waitlist-text').textContent = \`待分發 \${waitlistCourses.length} 門 · \${waitlistCredits} 學分\`;
+      document.getElementById('stat-enrolled-text').textContent = isEn 
+        ? \`Enrolled: \${enrolledCourses.length} · \${enrolledCredits} Credits\`
+        : \`已選上 \${enrolledCourses.length} 門 · \${enrolledCredits} 學分\`;
+      document.getElementById('stat-waitlist-text').textContent = isEn
+        ? \`Waitlist: \${waitlistCourses.length} · \${waitlistCredits} Credits\`
+        : \`待分發 \${waitlistCourses.length} 門 · \${waitlistCredits} 學分\`;
 
-      document.getElementById('f-all').textContent = \`全部 (\${courses.length})\`;
-      document.getElementById('f-enrolled').textContent = \`僅已選上 (\${enrolledCourses.length})\`;
-      document.getElementById('f-waitlist').textContent = \`僅待分發 (\${waitlistCourses.length})\`;
+      document.getElementById('f-all').textContent = isEn ? \`All (\${courses.length})\` : \`全部 (\${courses.length})\`;
+      document.getElementById('f-enrolled').textContent = isEn ? \`Enrolled (\${enrolledCourses.length})\` : \`僅已選上 (\${enrolledCourses.length})\`;
+      document.getElementById('f-waitlist').textContent = isEn ? \`Waitlist (\${waitlistCourses.length})\` : \`僅待分發 (\${waitlistCourses.length})\`;
 
       // 2. 決定過濾後的課程
       let displayCourses = courses;
@@ -684,6 +810,7 @@ const html = `<!DOCTYPE html>
     function renderMatrix(displayCourses) {
       const matrixEl = document.getElementById('tt-matrix');
       matrixEl.innerHTML = '';
+      const isEn = (currentLang === 'en');
 
       // 固定欄首與節次列 (預設 1~9 節，若有 0 節或 10, A~D 節則自動擴展)
       let minPeriodIdx = 1; // '1'
@@ -713,14 +840,20 @@ const html = `<!DOCTYPE html>
       matrixEl.style.gridTemplateRows = \`\${headHeight} repeat(\${activePeriods.length}, minmax(\${cellHeight}, auto))\`;
 
       // 欄首 Header
-      const col1Label = isMobile ? '節次' : '節次 / 時間';
+      const col1Label = isEn ? (isMobile ? 'Period' : 'Period / Time') : (isMobile ? '節次' : '節次 / 時間');
+      const d1 = isEn ? 'MON' : '週一';
+      const d2 = isEn ? 'TUE' : '週二';
+      const d3 = isEn ? 'WED' : '週三';
+      const d4 = isEn ? 'THU' : '週四';
+      const d5 = isEn ? 'FRI' : '週五';
+
       const headerHTML = [
         \`<div class="tt-col-head tt-col-sticky" style="grid-column: 1; grid-row: 1;">\${col1Label}</div>\`,
-        '<div class="tt-col-head" style="grid-column: 2; grid-row: 1;">週一</div>',
-        '<div class="tt-col-head" style="grid-column: 3; grid-row: 1;">週二</div>',
-        '<div class="tt-col-head" style="grid-column: 4; grid-row: 1;">週三</div>',
-        '<div class="tt-col-head" style="grid-column: 5; grid-row: 1;">週四</div>',
-        '<div class="tt-col-head" style="grid-column: 6; grid-row: 1;">週五</div>',
+        \`<div class="tt-col-head" style="grid-column: 2; grid-row: 1;">\${d1}</div>\`,
+        \`<div class="tt-col-head" style="grid-column: 3; grid-row: 1;">\${d2}</div>\`,
+        \`<div class="tt-col-head" style="grid-column: 4; grid-row: 1;">\${d3}</div>\`,
+        \`<div class="tt-col-head" style="grid-column: 5; grid-row: 1;">\${d4}</div>\`,
+        \`<div class="tt-col-head" style="grid-column: 6; grid-row: 1;">\${d5}</div>\`,
       ];
       matrixEl.insertAdjacentHTML('beforeend', headerHTML.join(''));
 
@@ -752,16 +885,16 @@ const html = `<!DOCTYPE html>
             <div class="empty-state-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
-            <div class="empty-state-title">\${courses.length === 0 ? '尚未同步您的課表' : '在此篩選條件下沒有課程'}</div>
+            <div class="empty-state-title">\${courses.length === 0 ? (isEn ? 'No Course Data Synced' : '尚未同步您的課表') : (isEn ? 'No courses in this filter' : '在此篩選條件下沒有課程')}</div>
             <div class="empty-state-desc">
               \${courses.length === 0 
-                ? '請拖曳上方「書籤小工具」至書籤列，前往臺大課程網即可一鍵同步專屬課表！或者您可以點擊載入示範課表體驗功能。' 
-                : '請切換篩選條件查看其他選課狀態。'}
+                ? (isEn ? 'Drag the Bookmarklet above to your bookmarks bar and visit NTU Course to sync your classes, or load the demo schedule to test.' : '請拖曳上方「書籤小工具」至書籤列，前往臺大課程網即可一鍵同步專屬課表！或者您可以點擊載入示範課表體驗功能。')
+                : (isEn ? 'Switch filter tabs to view other courses.' : '請切換篩選條件查看其他選課狀態。')}
             </div>
             \${courses.length === 0 ? \`
               <div class="empty-state-actions">
-                <button class="filter-pill active" onclick="loadDemoCourses()">👀 載入示範課表</button>
-                <button class="filter-pill" onclick="document.getElementById('btn-open-bm-modal').click()">📌 書籤安裝教學</button>
+                <button class="filter-pill active" onclick="loadDemoCourses()">👀 \${isEn ? 'Load Demo Schedule' : '載入示範課表'}</button>
+                <button class="filter-pill" onclick="document.getElementById('btn-open-bm-modal').click()">📌 \${isEn ? 'Bookmarklet Guide' : '書籤安裝教學'}</button>
               </div>
             \` : ''}
           </div>
@@ -773,6 +906,8 @@ const html = `<!DOCTYPE html>
       displayCourses.forEach((course, cIdx) => {
         const colorClass = COLOR_CLASSES[cIdx % COLOR_CLASSES.length];
         const slots = course.timeSlots || [];
+        const displayName = getCourseDisplayName(course);
+        const instructor = getCourseInstructor(course);
 
         slots.forEach(slotStr => {
           const groups = parseSlotGroups(slotStr);
@@ -789,17 +924,21 @@ const html = `<!DOCTYPE html>
             const gridEndRow = (lastPIdx - minPeriodIdx) + 3;
 
             const isWaitlist = !course.isEnrolled;
+            const waitlistBadge = isWaitlist ? (isEn ? '<span class="tt-b-status wait">Wait</span>' : '<span class="tt-b-status wait">待分發</span>') : '';
+            const creditsText = isEn ? \`\${course.credits} Cr\` : \`\${course.credits} 學分\`;
+            const locText = formatLocDisplay(course.locations && course.locations[0] ? course.locations[0] : (isEn ? 'TBA' : '依公告'));
+
             const blockHTML = \`
               <div class="tt-course-block \${colorClass} \${isWaitlist ? 'waitlist-card' : ''}" 
                    style="grid-column: \${col}; grid-row: \${gridStartRow} / \${gridEndRow};"
                    onclick="openCourseDetail('\${course.id}')">
                 <div class="tt-b-top">
-                  <span class="tt-b-name">\${escapeHtml(course.name)}</span>
-                  \${isWaitlist ? '<span class="tt-b-status wait">待分發</span>' : ''}
+                  <span class="tt-b-name">\${escapeHtml(displayName)}</span>
+                  \${waitlistBadge}
                 </div>
                 <div class="tt-b-bottom">
-                  <span class="tt-b-meta">\${escapeHtml(course.instructor ? course.instructor + ' · ' : '')}\${course.credits} 學分</span>
-                  <span class="tt-b-loc">📍 \${escapeHtml(formatLocDisplay(course.locations && course.locations[0] ? course.locations[0] : '依公告'))}</span>
+                  <span class="tt-b-meta">\${escapeHtml(instructor ? instructor + ' · ' : '')}\${creditsText}</span>
+                  <span class="tt-b-loc">📍 \${escapeHtml(locText)}</span>
                   <span class="tt-b-meta">\${g.timeStr}</span>
                 </div>
               </div>
@@ -813,10 +952,18 @@ const html = `<!DOCTYPE html>
     function renderSidebar() {
       const listEl = document.getElementById('sidebar-course-list');
       listEl.innerHTML = '';
+      const isEn = (currentLang === 'en');
 
       courses.forEach((c, idx) => {
         const isChecked = selectedCourseIds.has(c.id);
         const colorClass = COLOR_CLASSES[idx % COLOR_CLASSES.length];
+        const displayName = getCourseDisplayName(c);
+        const instructor = getCourseInstructor(c);
+        const statusTag = c.isEnrolled 
+          ? \`<span class="ci-status-tag enrolled">\${isEn ? 'Enrolled' : '已選上'}</span>\`
+          : \`<span class="ci-status-tag wait">\${isEn ? 'Waitlist' : '待分發'}</span>\`;
+        const creditsText = isEn ? \`\${c.credits} Credits\` : \`\${c.credits} 學分\`;
+
         const cardHTML = \`
           <div class="course-item \${isChecked ? 'selected' : ''}" data-id="\${c.id}">
             <div class="ci-left">
@@ -824,16 +971,16 @@ const html = `<!DOCTYPE html>
             </div>
             <div class="ci-content" onclick="openCourseDetail('\${c.id}')">
               <div class="ci-row-1">
-                <span class="ci-name">\${escapeHtml(c.name)}</span>
-                <span class="ci-status-tag \${c.isEnrolled ? 'enrolled' : 'wait'}">\${c.isEnrolled ? '已選上' : '待分發'}</span>
+                <span class="ci-name">\${escapeHtml(displayName)}</span>
+                \${statusTag}
               </div>
               <div class="ci-row-2">
                 <span>⏰ \${escapeHtml((c.timeSlots || []).join('、'))}</span>
-                <span>📍 \${escapeHtml((c.locations || []).join('、') || '依公告')}</span>
+                <span>📍 \${escapeHtml((c.locations || []).join('、') || (isEn ? 'TBA' : '依公告'))}</span>
               </div>
               <div class="ci-row-3">
-                <span class="ci-prof">\${escapeHtml(c.instructor || '授課教師待定')}</span>
-                <span class="ci-meta-dim">#\${c.serial || c.code} · \${c.credits} 學分</span>
+                <span class="ci-prof">\${escapeHtml(instructor)}</span>
+                <span class="ci-meta-dim">#\${c.serial || c.code} · \${creditsText}</span>
               </div>
             </div>
           </div>
@@ -861,11 +1008,14 @@ const html = `<!DOCTYPE html>
 
     function updateSidebarSelectionCount() {
       const label = document.getElementById('sidebar-sel-label');
-      label.textContent = \`已勾選 \${selectedCourseIds.size} / \${courses.length} 門課程\`;
+      const isEn = (currentLang === 'en');
+      label.textContent = isEn 
+        ? \`Selected \${selectedCourseIds.size} / \${courses.length} courses\`
+        : \`已勾選 \${selectedCourseIds.size} / \${courses.length} 門課程\`;
     }
 
     function formatLocDisplay(loc) {
-      if (!loc) return '依公告';
+      if (!loc) return currentLang === 'en' ? 'TBA' : '依公告';
       return String(loc)
         .replace(/^國立臺灣大學\\s*/, '')
         .replace(/^臺大\\s*/, '')
@@ -885,58 +1035,78 @@ const html = `<!DOCTYPE html>
     }
 
     // =========================================================================
-    // 詳細資訊彈窗
+    // 詳細資訊彈窗 (支援中英文 Tab 切換與官方簡介展示)
     // =========================================================================
     window.openCourseDetail = function(id) {
       const course = courses.find(c => String(c.id) === String(id));
       if (!course) return;
 
-      document.getElementById('md-title').textContent = course.name;
+      const isEn = (currentLang === 'en');
+      const displayName = getCourseDisplayName(course);
+      document.getElementById('md-title').textContent = displayName;
       const body = document.getElementById('md-body');
+
+      const instructor = getCourseInstructor(course);
+      const creditsLabel = isEn ? ('Credits: ' + (course.credits || '0')) : ('學分數：' + (course.credits || '0') + ' 學分');
+      const codeLabel = isEn ? ('Course No.: ' + (course.code || '')) : ('課號：' + (course.code || ''));
+      const serialLabel = isEn ? ('Serial No.: #' + (course.serial || '')) : ('流水號：#' + (course.serial || ''));
+      const statusTag = course.isEnrolled 
+        ? (isEn ? '<span class="ci-status-tag enrolled">✅ Enrolled</span>' : '<span class="ci-status-tag enrolled">✅ 已選上課程</span>')
+        : (isEn ? '<span class="ci-status-tag wait">⏳ Waitlist</span>' : '<span class="ci-status-tag wait">⏳ 志願候補 / 待分發</span>');
+
+      const remarks = (isEn && course.remarksEn) ? course.remarksEn : (course.remarks || '');
+      const desc = (isEn && course.descriptionEn) ? course.descriptionEn : (course.description || '');
+
+      const zhUrl = course.url || 'https://course.ntu.edu.tw';
+      const enUrl = zhUrl.includes('/en/courses/') ? zhUrl : zhUrl.replace('/courses/', '/en/courses/');
+
       body.innerHTML = \`
         <div class="md-badge-bar">
-          <span class="ci-status-tag \${course.isEnrolled ? 'enrolled' : 'wait'}">\${course.isEnrolled ? '✅ 已選上課程' : '⏳ 志願候補 / 待分發'}</span>
-          <span style="font-size:12px;color:var(--text-muted);font-weight:600">學分數：\${course.credits} 學分</span>
-          \${course.code ? \`<span style="font-size:12px;color:var(--text-muted)">課號：\${escapeHtml(course.code)}</span>\` : ''}
-          \${course.serial ? \`<span style="font-size:12px;color:var(--text-muted)">流水號：#\${escapeHtml(course.serial)}</span>\` : ''}
+          \${statusTag}
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600">\${creditsLabel}</span>
+          \${course.code ? \`<span style="font-size:12px;color:var(--text-muted)">\${escapeHtml(codeLabel)}</span>\` : ''}
+          \${course.serial ? \`<span style="font-size:12px;color:var(--text-muted)">\${escapeHtml(serialLabel)}</span>\` : ''}
         </div>
 
         <div class="md-info-grid">
           <div class="md-field">
-            <span class="md-label">授課教師</span>
-            <span class="md-val">\${escapeHtml(course.instructor || '依系所公告')}</span>
+            <span class="md-label">\${isEn ? 'Instructor' : '授課教師'}</span>
+            <span class="md-val">\${escapeHtml(instructor)}</span>
           </div>
           <div class="md-field">
-            <span class="md-label">上課教室與地點</span>
-            <span class="md-val">\${escapeHtml((course.locations || []).join('、') || '依系所公告')}</span>
+            <span class="md-label">\${isEn ? 'Location' : '上課教室與地點'}</span>
+            <span class="md-val">\${escapeHtml((course.locations || []).join('、') || (isEn ? 'TBA' : '依系所公告'))}</span>
           </div>
           <div class="md-field">
-            <span class="md-label">上課時間與節次</span>
+            <span class="md-label">\${isEn ? 'Time Slot' : '上課時間與節次'}</span>
             <span class="md-val">\${escapeHtml((course.timeSlots || []).join('、'))}</span>
           </div>
           <div class="md-field">
-            <span class="md-label">課程識別碼</span>
-            <span class="md-val">\${escapeHtml(course.identifier || '無')}</span>
+            <span class="md-label">\${isEn ? 'Course ID' : '課程識別碼'}</span>
+            <span class="md-val">\${escapeHtml(course.identifier || (isEn ? 'None' : '無'))}</span>
           </div>
         </div>
 
-        \${course.remarks ? \`
+        \${remarks ? \`
           <div class="md-desc-box" style="margin-top:14px;border-left:3px solid var(--accent-amber);">
-            <div style="font-size:11.5px;font-weight:700;color:var(--accent-amber);margin-bottom:4px">選課備註與限制</div>
-            <div style="font-size:12.5px;line-height:1.5;color:var(--text-secondary)">\${escapeHtml(course.remarks)}</div>
+            <div style="font-size:11.5px;font-weight:700;color:var(--accent-amber);margin-bottom:4px">\${isEn ? 'Notes & Restrictions' : '選課備註與限制'}</div>
+            <div style="font-size:12.5px;line-height:1.5;color:var(--text-secondary)">\${escapeHtml(remarks)}</div>
           </div>
         \` : ''}
 
         <div class="md-desc-box" style="margin-top:14px">
-          <div class="md-desc-title">課程概述與大綱 (Description)</div>
-          <div class="md-desc-text">\${escapeHtml(course.description || '暫無課程大綱與簡介資訊。')}</div>
+          <div class="md-desc-title">\${isEn ? 'Course Syllabus (NTU Official)' : '課程概述與大綱 (NTU 官方簡介)'}</div>
+          <div class="md-desc-text">\${escapeHtml(desc || (isEn ? 'No syllabus details available.' : '暫無課程大綱與簡介資訊。'))}</div>
         </div>
 
-        \${course.url ? \`
-          <div style="margin-top:16px;text-align:right">
-            <a href="\${escapeHtml(course.url)}" target="_blank" style="color:var(--accent-primary);font-size:12.5px;text-decoration:underline">在臺大課程網開啟本課程頁面 ↗</a>
-          </div>
-        \` : ''}
+        <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <a href="\${escapeHtml(enUrl)}" target="_blank" style="color:var(--accent-cyan); font-size:12.5px; text-decoration:underline;">
+            Open NTU English Page ↗
+          </a>
+          <a href="\${escapeHtml(zhUrl)}" target="_blank" style="color:var(--accent-primary); font-size:12.5px; text-decoration:underline;">
+            在臺大課程網開啟本課程頁面 ↗
+          </a>
+        </div>
       \`;
 
       const modal = document.getElementById('modal-detail-backdrop');
@@ -972,11 +1142,14 @@ const html = `<!DOCTYPE html>
       return lines.join('\\r\\n');
     }
 
-    function exportToICS(selectedCourses, customStartDate, customWeeks, markWaitlist = true) {
+    function exportToICS(selectedCourses, customStartDate, customWeeks, markWaitlist = true, lang = 'zh') {
       if (!selectedCourses || selectedCourses.length === 0) {
         alert('請至少勾選一門課程！');
         return;
       }
+
+      const isEn = (lang === 'en');
+      const isBi = (lang === 'bilingual');
 
       // 開學日：支援自訂或預設 2026-09-07 (台大 115-1 開學日)
       let semStart;
@@ -994,20 +1167,24 @@ const html = `<!DOCTYPE html>
       };
       const escapeICS = (str) => {
         if (!str) return '';
+        const bs = String.fromCharCode(92);
         return String(str)
-          .replace(/\\\\/g, '\\\\\\\\')
-          .replace(/;/g, '\\\\;')
-          .replace(/,/g, '\\\\,')
-          .replace(/\\r?\\n/g, '\\\\n');
+          .split(bs).join(bs + bs)
+          .split(';').join(bs + ';')
+          .split(',').join(bs + ',')
+          .split(String.fromCharCode(13, 10)).join(bs + 'n')
+          .split(String.fromCharCode(10)).join(bs + 'n');
       };
+
+      const calName = isEn ? 'NTU Course Schedule 115-1' : (isBi ? '臺大課程表 NTU Schedule 115-1' : '臺大課程表 115-1');
 
       const lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//NTU Course Calendar Buddy//ZH-TW',
+        'PRODID:-//NTU Course Calendar Buddy//' + (isEn ? 'EN' : 'ZH-TW'),
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
-        'X-WR-CALNAME:臺大課程表 115-1',
+        \`X-WR-CALNAME:\${calName}\`,
         'X-WR-TIMEZONE:Asia/Taipei',
         'BEGIN:VTIMEZONE',
         'TZID:Asia/Taipei',
@@ -1046,19 +1223,57 @@ const html = `<!DOCTYPE html>
             const dtEnd = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), endDef.end[0], endDef.end[1], 0);
 
             // 標題純淨化：絕不包含課號與流水號
-            const cleanName = cleanCourseTitle(c.name, c.code, c.serial, c.identifier);
-            const summary = (markWaitlist && !c.isEnrolled ? '[候補] ' : '') + cleanName;
-            const location = (c.locations && c.locations.length > 0) ? c.locations.join('、') : '依系所公告';
+            const cleanZh = cleanCourseTitle(c.name, c.code, c.serial, c.identifier);
+            const cleanEn = cleanCourseTitle(c.nameEn, c.code, c.serial, c.identifier) || cleanZh;
 
-            let desc = \`【選課狀態】：\${c.isEnrolled ? '已選上' : '志願分發候補'}\\n\` +
-              (c.instructor ? \`授課教師：\${c.instructor}\\n\` : '') +
-              (c.code ? \`課號：\${c.code}\\n\` : '') +
-              (c.serial ? \`流水號：\${c.serial}\\n\` : '') +
-              (c.identifier ? \`課程識別碼：\${c.identifier}\\n\` : '') +
-              \`教室：\${location}\\n\` +
-              (c.remarks ? \`備註：\${c.remarks}\\n\` : '') +
-              (c.description ? \`\\n【課程概述】\\n\${c.description}\\n\` : '') +
-              (c.url ? \`\\n課程網址：\${c.url}\` : '');
+            let titleText = cleanZh;
+            if (isEn) {
+              titleText = cleanEn;
+            } else if (isBi && c.nameEn && c.nameEn !== c.name) {
+              titleText = \`\${cleanZh} (\${cleanEn})\`;
+            }
+
+            let waitPrefix = '';
+            if (markWaitlist && !c.isEnrolled) {
+              waitPrefix = isEn ? '[Waiting] ' : (isBi ? '[候補/Waiting] ' : '[候補] ');
+            }
+            const summary = waitPrefix + titleText;
+            const location = (c.locations && c.locations.length > 0) ? c.locations.join('、') : (isEn ? 'TBA' : '依系所公告');
+
+            const descParts = [];
+            if (isEn) {
+              descParts.push(!c.isEnrolled ? '⚠️ [Status]: Waiting list (Not Enrolled)' : '✅ [Status]: Enrolled');
+              if (c.instructorEn || c.instructor) descParts.push('Instructor: ' + (c.instructorEn || c.instructor));
+              if (c.code) descParts.push('Course No.: ' + c.code);
+              if (c.serial) descParts.push('Serial No.: #' + c.serial);
+              if (c.identifier) descParts.push('Course ID: ' + c.identifier);
+              descParts.push('Classroom: ' + location);
+              if (c.remarksEn || c.remarks) descParts.push('Notes: ' + (c.remarksEn || c.remarks));
+              if (c.descriptionEn || c.description) descParts.push('\\n[Course Description]\\n' + (c.descriptionEn || c.description));
+              const enUrl = (c.url && !c.url.includes('/en/courses/')) ? c.url.replace('/courses/', '/en/courses/') : (c.url || '');
+              if (enUrl) descParts.push('\\nCourse URL: ' + enUrl);
+            } else if (isBi) {
+              descParts.push(!c.isEnrolled ? '⚠️【選課狀態 / Status】：志願候補 / Waiting list' : '✅【選課狀態 / Status】：已選上 / Enrolled');
+              if (c.instructor) descParts.push('授課教師 / Instructor：' + c.instructor + (c.instructorEn ? \` (\${c.instructorEn})\` : ''));
+              if (c.code) descParts.push('課號 / Course No.：' + c.code);
+              if (c.serial) descParts.push('流水號 / Serial No.：#' + c.serial);
+              if (c.identifier) descParts.push('課程識別碼 / Course ID：' + c.identifier);
+              descParts.push('教室 / Location：' + location);
+              if (c.remarks || c.remarksEn) descParts.push('備註 / Notes：' + (c.remarks || '') + (c.remarksEn ? \`\\n[Notes] \${c.remarksEn}\` : ''));
+              if (c.description) descParts.push('\\n【課程概述】\\n' + c.description);
+              if (c.descriptionEn) descParts.push('\\n【Course Description】\\n' + c.descriptionEn);
+              if (c.url) descParts.push('\\n課程網址 / URL：' + c.url);
+            } else {
+              descParts.push(!c.isEnrolled ? '⚠️【選課狀態】：志願分發候補' : '✅【選課狀態】：已選上');
+              if (c.instructor) descParts.push('授課教師：' + c.instructor);
+              if (c.code) descParts.push('課號：' + c.code);
+              if (c.serial) descParts.push('流水號：#' + c.serial);
+              if (c.identifier) descParts.push('課程識別碼：' + c.identifier);
+              descParts.push('教室：' + location);
+              if (c.remarks) descParts.push('備註：' + c.remarks);
+              if (c.description) descParts.push('\\n【課程概述】\\n' + c.description);
+              if (c.url) descParts.push('\\n課程網址：' + c.url);
+            }
 
             const uid = \`ntu-\${Date.now()}-\${Math.random().toString(36).slice(2, 9)}@course.ntu.edu.tw\`;
 
@@ -1069,7 +1284,7 @@ const html = `<!DOCTYPE html>
             lines.push(\`RRULE:FREQ=WEEKLY;BYDAY=\${byDay};COUNT=\${totalWeeks}\`);
             lines.push(foldLine(\`SUMMARY:\${escapeICS(summary)}\`));
             lines.push(foldLine(\`LOCATION:\${escapeICS(location)}\`));
-            lines.push(foldLine(\`DESCRIPTION:\${escapeICS(desc)}\`));
+            lines.push(foldLine(\`DESCRIPTION:\${escapeICS(descParts.join('\\n'))}\`));
             if (c.url) lines.push(foldLine(\`URL:\${c.url}\`));
             lines.push('STATUS:CONFIRMED');
             lines.push('END:VEVENT');
@@ -1079,128 +1294,14 @@ const html = `<!DOCTYPE html>
 
       lines.push('END:VCALENDAR');
       const icsContent = lines.join('\\r\\n');
-
-      // 觸發下載 Blob
-      const blob = new Blob(['\\uFEFF' + icsContent], { type: 'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = isDemoMode ? '臺大示範課表_115-1.ics' : '臺大課表_115-1.ics';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('🎉 行事曆 (.ics) 檔案已成功下載！');
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = \`NTU_Courses_\${new Date().toISOString().slice(0, 10)}.ics\`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-
-    // =========================================================================
-    // 資料儲存與示範模式管理
-    // =========================================================================
-    function loadDemoCourses() {
-      courses = JSON.parse(JSON.stringify(DEMO_COURSES));
-      isDemoMode = true;
-      selectedCourseIds = new Set(courses.map(c => c.id));
-      renderApp();
-      showToast('👀 已載入通用示範課表！');
-    }
-
-    function saveUserCourses(newCourses) {
-      if (!Array.isArray(newCourses) || newCourses.length === 0) {
-        alert('匯入的課表格式不正確或內容為空！');
-        return false;
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newCourses));
-      courses = newCourses;
-      isDemoMode = false;
-      selectedCourseIds = new Set(courses.map(c => c.id));
-      renderApp();
-      return true;
-    }
-
-    function clearUserData() {
-      if (confirm('確定要清除儲存在瀏覽器中的專屬課表並恢復為示範模式嗎？')) {
-        localStorage.removeItem(STORAGE_KEY);
-        loadDemoCourses();
-        showToast('🔄 已清除個人課表，恢復為示範預覽。');
-      }
-    }
-
-    // 檢查 URL Hash 是否有自動同步參數
-    function checkUrlImport() {
-      const hash = window.location.hash;
-      if (hash && hash.startsWith('#import=')) {
-        try {
-          const raw = decodeURIComponent(hash.substring(8));
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            saveUserCourses(parsed);
-            showToast('🎉 成功從書籤同步並儲存您的 115-1 課表！');
-            // 清理 URL Hash
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            return true;
-          }
-        } catch (e) {
-          console.error('Failed to parse URL import data:', e);
-          showToast('⚠️ 網址同步資料格式有誤');
-        }
-      }
-      return false;
-    }
-
-    // 初始化載入
-    function initData() {
-      if (checkUrlImport()) return;
-
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          courses = JSON.parse(stored);
-          isDemoMode = false;
-          selectedCourseIds = new Set(courses.map(c => c.id));
-          renderApp();
-          return;
-        } catch (e) {
-          console.error('Corrupted local storage data:', e);
-        }
-      }
-
-      // 若無本地資料則載入示範課表
-      loadDemoCourses();
-    }
-
-    // =========================================================================
-    // UI 互動監聽綁定
-    // =========================================================================
-    function showToast(msg) {
-      const toast = document.getElementById('app-toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => { toast.classList.remove('show'); }, 3000);
-    }
-
-    // Filter Buttons
-    ['all', 'enrolled', 'waitlist'].forEach(f => {
-      document.getElementById(\`f-\${f}\`).addEventListener('click', (e) => {
-        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-        e.target.classList.add('active');
-        activeFilter = f;
-        renderMatrix(activeFilter === 'enrolled' ? courses.filter(c => c.isEnrolled) : (activeFilter === 'waitlist' ? courses.filter(c => !c.isEnrolled) : courses));
-      });
-    });
-
-    // Bulk selection links in sidebar
-    document.getElementById('btn-sel-all').addEventListener('click', () => {
-      selectedCourseIds = new Set(courses.map(c => c.id));
-      renderSidebar();
-    });
-    document.getElementById('btn-unsel-all').addEventListener('click', () => {
-      selectedCourseIds.clear();
-      renderSidebar();
-    });
-    document.getElementById('btn-sel-enrolled').addEventListener('click', () => {
-      selectedCourseIds = new Set(courses.filter(c => c.isEnrolled).map(c => c.id));
-      renderSidebar();
-    });
 
     // Export Modal & Download handlers
     function openExportModal() {
@@ -1219,8 +1320,8 @@ const html = `<!DOCTYPE html>
         <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:rgba(255,255,255,0.03); border-radius:4px;">
           <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             <span style="font-size:11px; padding:1px 5px; border-radius:3px; \${c.isEnrolled ? 'background:rgba(16,185,129,0.15); color:var(--accent-primary);' : 'background:rgba(245,158,11,0.15); color:var(--status-waitlist);'}">\${c.isEnrolled ? '正選' : '候補'}</span>
-            <span style="font-weight:600; color:var(--text-primary);">\${escapeHtml(cleanCourseTitle(c.name, c.code, c.serial, c.identifier))}</span>
-            \${c.instructor ? \`<span style="color:var(--text-muted); font-size:11.5px;">(\${escapeHtml(c.instructor)})</span>\` : ''}
+            <span style="font-weight:600; color:var(--text-primary);">\${escapeHtml(getCourseDisplayName(c))}</span>
+            \${c.instructor ? \`<span style="color:var(--text-muted); font-size:11.5px;">(\${escapeHtml(getCourseInstructor(c))})</span>\` : ''}
           </div>
           <div style="color:var(--text-secondary); font-size:11.5px; font-variant-numeric:tabular-nums; white-space:nowrap; margin-left:8px;">
             \${escapeHtml((c.timeSlots || []).join(', ') || '無節次')}
@@ -1241,8 +1342,9 @@ const html = `<!DOCTYPE html>
       const startDate = document.getElementById('exp-start-date').value;
       const weeks = parseInt(document.getElementById('exp-weeks-count').value, 10) || 16;
       const markWaitlist = document.getElementById('exp-mark-waitlist').checked;
+      const lang = document.getElementById('exp-lang-select').value || 'zh';
 
-      exportToICS(selected, startDate, weeks, markWaitlist);
+      exportToICS(selected, startDate, weeks, markWaitlist, lang);
 
       const modal = document.getElementById('modal-export-backdrop');
       modal.classList.remove('open');
@@ -1256,23 +1358,30 @@ const html = `<!DOCTYPE html>
     });
 
     // Scriptable Widget Modal & Code Generator
-    function generateScriptableCode(selectedCourses, includeWaitlist = true) {
+    function generateScriptableCode(selectedCourses, includeWaitlist = true, lang = 'zh') {
       const targetCourses = includeWaitlist ? selectedCourses : selectedCourses.filter(c => c.isEnrolled);
       const cleanData = targetCourses.map(c => ({
         name: cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
+        nameEn: cleanCourseTitle(c.nameEn, c.code, c.serial, c.identifier) || cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
         instructor: c.instructor || '',
+        instructorEn: c.instructorEn || '',
         locations: c.locations || [],
         timeSlots: c.timeSlots || [],
         isEnrolled: c.isEnrolled !== false,
         url: c.url || 'https://course.ntu.edu.tw'
       }));
       const jsonStr = JSON.stringify(cleanData, null, 2);
+      let tpl = SCRIPTABLE_TEMPLATE;
+
+      // 替換語言標籤
+      tpl = tpl.split('/* __USER_LANG__ */ "zh"').join(JSON.stringify(lang));
+
       const placeholder = '/* __USER_COURSES_JSON__ */ [';
-      const startIdx = SCRIPTABLE_TEMPLATE.indexOf(placeholder);
-      if (startIdx === -1) return SCRIPTABLE_TEMPLATE;
-      const endIdx = SCRIPTABLE_TEMPLATE.indexOf('];', startIdx);
-      if (endIdx === -1) return SCRIPTABLE_TEMPLATE;
-      return SCRIPTABLE_TEMPLATE.slice(0, startIdx) + jsonStr + ';' + SCRIPTABLE_TEMPLATE.slice(endIdx + 2);
+      const startIdx = tpl.indexOf(placeholder);
+      if (startIdx === -1) return tpl;
+      const endIdx = tpl.indexOf('];', startIdx);
+      if (endIdx === -1) return tpl;
+      return tpl.slice(0, startIdx) + jsonStr + ';' + tpl.slice(endIdx + 2);
     }
 
     function openScriptableModal() {
@@ -1282,7 +1391,8 @@ const html = `<!DOCTYPE html>
         return;
       }
       const includeWaitlist = document.getElementById('scriptable-include-waitlist').checked;
-      const code = generateScriptableCode(selected, includeWaitlist);
+      const lang = document.getElementById('scriptable-lang-select').value || 'zh';
+      const code = generateScriptableCode(selected, includeWaitlist, lang);
       document.getElementById('scriptable-code-area').value = code;
       document.getElementById('scriptable-courses-count').textContent = \`已收錄 \${selected.length} 門課程代碼\`;
 
@@ -1291,11 +1401,15 @@ const html = `<!DOCTYPE html>
       modal.classList.add('show');
     }
 
-    document.getElementById('scriptable-include-waitlist').addEventListener('change', () => {
+    const refreshScriptableCode = () => {
       const selected = courses.filter(c => selectedCourseIds.has(c.id));
       const includeWaitlist = document.getElementById('scriptable-include-waitlist').checked;
-      document.getElementById('scriptable-code-area').value = generateScriptableCode(selected, includeWaitlist);
-    });
+      const lang = document.getElementById('scriptable-lang-select').value || 'zh';
+      document.getElementById('scriptable-code-area').value = generateScriptableCode(selected, includeWaitlist, lang);
+    };
+
+    document.getElementById('scriptable-include-waitlist').addEventListener('change', refreshScriptableCode);
+    document.getElementById('scriptable-lang-select').addEventListener('change', refreshScriptableCode);
 
     document.getElementById('btn-open-scriptable-modal').addEventListener('click', openScriptableModal);
     const sidebarScriptableBtn = document.getElementById('btn-sidebar-scriptable');
@@ -1334,11 +1448,22 @@ const html = `<!DOCTYPE html>
     function generateAndroidJson(selectedCourses, includeWaitlist = true) {
       const targetCourses = includeWaitlist ? selectedCourses : selectedCourses.filter(c => c.isEnrolled);
       const cleanData = targetCourses.map(c => ({
+        id: c.id,
         name: cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
+        nameEn: cleanCourseTitle(c.nameEn, c.code, c.serial, c.identifier) || cleanCourseTitle(c.name, c.code, c.serial, c.identifier),
+        code: c.code || '',
+        serial: c.serial || '',
+        identifier: c.identifier || '',
+        credits: c.credits || '',
         instructor: c.instructor || '',
+        instructorEn: c.instructorEn || '',
         locations: c.locations || [],
         timeSlots: c.timeSlots || [],
         isEnrolled: c.isEnrolled !== false,
+        remarks: c.remarks || '',
+        remarksEn: c.remarksEn || '',
+        description: c.description || '',
+        descriptionEn: c.descriptionEn || '',
         url: c.url || 'https://course.ntu.edu.tw'
       }));
       return JSON.stringify(cleanData, null, 2);
@@ -1404,6 +1529,139 @@ const html = `<!DOCTYPE html>
       const modal = document.getElementById('modal-android-backdrop');
       modal.classList.remove('open');
       modal.classList.remove('show');
+    });
+
+    // =========================================================================
+    // 資料儲存與示範模式管理
+    // =========================================================================
+    function showToast(msg) {
+      const toast = document.getElementById('app-toast');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    function loadDemoCourses() {
+      courses = JSON.parse(JSON.stringify(DEMO_COURSES));
+      isDemoMode = true;
+      selectedCourseIds = new Set(courses.map(c => c.id));
+      renderApp();
+      showToast(currentLang === 'en' ? '👀 Demo schedule loaded!' : '👀 已載入通用示範課表！');
+    }
+
+    function saveUserCourses(newCourses) {
+      if (!Array.isArray(newCourses) || newCourses.length === 0) {
+        alert(currentLang === 'en' ? 'Course data format invalid or empty!' : '匯入的課表格式不正確或內容為空！');
+        return false;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newCourses));
+      courses = newCourses;
+      isDemoMode = false;
+      selectedCourseIds = new Set(courses.map(c => c.id));
+      renderApp();
+      return true;
+    }
+
+    function clearUserData() {
+      const msg = currentLang === 'en' 
+        ? 'Are you sure you want to clear your saved schedule and restore the demo preview?' 
+        : '確定要清除儲存在瀏覽器中的專屬課表並恢復為示範模式嗎？';
+      if (confirm(msg)) {
+        localStorage.removeItem(STORAGE_KEY);
+        loadDemoCourses();
+        showToast(currentLang === 'en' ? '🔄 Cleared custom courses, restored demo.' : '🔄 已清除個人課表，恢復為示範預覽。');
+      }
+    }
+
+    // 檢查 URL Hash 是否有自動同步參數
+    function checkUrlImport() {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#import=')) {
+        try {
+          const raw = decodeURIComponent(hash.substring(8));
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            saveUserCourses(parsed);
+            showToast(currentLang === 'en' ? '🎉 Schedule synced and saved successfully!' : '🎉 成功從書籤同步並儲存您的 115-1 課表！');
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+            return true;
+          }
+        } catch (e) {
+          console.error('Failed to parse URL import data:', e);
+          showToast(currentLang === 'en' ? '⚠️ Sync data corrupted' : '⚠️ 網址同步資料格式有誤');
+        }
+      }
+      return false;
+    }
+
+    // 初始化載入
+    function initData() {
+      if (checkUrlImport()) return;
+
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          courses = JSON.parse(stored);
+          isDemoMode = false;
+          selectedCourseIds = new Set(courses.map(c => c.id));
+          renderApp();
+          return;
+        } catch (e) {
+          console.error('Corrupted local storage data:', e);
+        }
+      }
+
+      // 若無本地資料則載入示範課表
+      loadDemoCourses();
+    }
+
+    // Filter Buttons
+    ['all', 'enrolled', 'waitlist'].forEach(f => {
+      const el = document.getElementById(\`f-\${f}\`);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+          e.target.classList.add('active');
+          activeFilter = f;
+          renderMatrix(activeFilter === 'enrolled' ? courses.filter(c => c.isEnrolled) : (activeFilter === 'waitlist' ? courses.filter(c => !c.isEnrolled) : courses));
+        });
+      }
+    });
+
+    // Language Switcher Buttons
+    const btnLangZh = document.getElementById('btn-lang-zh');
+    if (btnLangZh) {
+      btnLangZh.addEventListener('click', () => {
+        currentLang = 'zh';
+        localStorage.setItem('ntu_lang', 'zh');
+        renderApp();
+      });
+    }
+    const btnLangEn = document.getElementById('btn-lang-en');
+    if (btnLangEn) {
+      btnLangEn.addEventListener('click', () => {
+        currentLang = 'en';
+        localStorage.setItem('ntu_lang', 'en');
+        renderApp();
+      });
+    }
+
+    // Bulk selection links in sidebar
+    const btnSelAll = document.getElementById('btn-sel-all');
+    if (btnSelAll) btnSelAll.addEventListener('click', () => {
+      selectedCourseIds = new Set(courses.map(c => c.id));
+      renderSidebar();
+    });
+    const btnUnselAll = document.getElementById('btn-unsel-all');
+    if (btnUnselAll) btnUnselAll.addEventListener('click', () => {
+      selectedCourseIds.clear();
+      renderSidebar();
+    });
+    const btnSelEnrolled = document.getElementById('btn-sel-enrolled');
+    if (btnSelEnrolled) btnSelEnrolled.addEventListener('click', () => {
+      selectedCourseIds = new Set(courses.filter(c => c.isEnrolled).map(c => c.id));
+      renderSidebar();
     });
 
     // Reset / Toggle demo

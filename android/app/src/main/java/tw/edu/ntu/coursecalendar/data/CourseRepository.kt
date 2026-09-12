@@ -15,44 +15,71 @@ class CourseRepository(private val context: Context) {
     private val gson = Gson()
     private val keyCourses = "saved_courses_json"
 
-    // 示範課程
+    // 示範課程 (含中英雙語官方資訊)
     val demoCourses: List<Course> = listOf(
         Course(
             name = "微積分甲 (一)",
+            nameEn = "Calculus (1)",
             instructor = "齊震宇",
+            instructorEn = "Zhen-Yu Qi",
             locations = listOf("共同101"),
             timeSlots = listOf("一 3,4", "三 3,4"),
             isEnrolled = true
         ),
         Course(
             name = "普通物理學甲 (一)",
+            nameEn = "General Physics (1)",
             instructor = "張寶棣",
+            instructorEn = "Pao-Ti Chang",
             locations = listOf("普物館102"),
             timeSlots = listOf("二 2,3,4"),
             isEnrolled = true
         ),
         Course(
             name = "計算機程式設計",
+            nameEn = "Computer Programming",
             instructor = "鄭卜壬",
+            instructorEn = "Pu-Jen Cheng",
             locations = listOf("資101"),
             timeSlots = listOf("四 6,7,8"),
             isEnrolled = true
         ),
         Course(
             name = "資料結構與演算法",
+            nameEn = "Data Structures and Algorithms",
             instructor = "呂學一",
+            instructorEn = "Hsueh-I Lu",
             locations = listOf("博理101"),
             timeSlots = listOf("五 2,3,4"),
             isEnrolled = true
         ),
         Course(
             name = "機器學習",
+            nameEn = "Machine Learning",
             instructor = "李宏毅",
+            instructorEn = "Hung-yi Lee",
             locations = listOf("電二143"),
             timeSlots = listOf("一 7,8,9"),
             isEnrolled = true
         )
     )
+
+    fun getLanguage(): String {
+        return prefs.getString("display_language", "system") ?: "system"
+    }
+
+    fun setLanguage(lang: String) {
+        prefs.edit().putString("display_language", lang).apply()
+        triggerWidgetUpdate()
+    }
+
+    fun isEnglish(): Boolean {
+        val lang = getLanguage()
+        if (lang == "en") return true
+        if (lang == "zh") return false
+        val locale = java.util.Locale.getDefault()
+        return locale.language.startsWith("en")
+    }
 
     fun getCourses(): List<Course> {
         val json = prefs.getString(keyCourses, null) ?: return demoCourses

@@ -2,12 +2,26 @@ package tw.edu.ntu.coursecalendar.data
 
 data class Course(
     val name: String,
+    val nameEn: String? = null,
     val instructor: String? = null,
+    val instructorEn: String? = null,
     val locations: List<String>? = null,
     val timeSlots: List<String>? = null,
     val isEnrolled: Boolean = true,
-    val url: String? = null
-)
+    val url: String? = null,
+    val description: String? = null,
+    val descriptionEn: String? = null,
+    val remarks: String? = null,
+    val remarksEn: String? = null
+) {
+    fun getDisplayName(isEnglish: Boolean = false): String {
+        return if (isEnglish && !nameEn.isNullOrBlank()) nameEn else name
+    }
+
+    fun getDisplayInstructor(isEnglish: Boolean = false): String? {
+        return if (isEnglish && !instructorEn.isNullOrBlank()) instructorEn else instructor
+    }
+}
 
 data class PeriodDef(
     val period: String,
