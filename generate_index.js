@@ -94,6 +94,18 @@ const html = `<!DOCTYPE html>
       </div>
     </header>
 
+    <!-- Notice Banner for Missing English in legacy data -->
+    <div id="missing-en-banner" style="display:none; margin:14px 24px 0 24px; padding:10px 18px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:var(--radius-sm); color:#fbbf24; font-size:13px; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="banner-text"><strong>提醒：</strong>目前儲存的課表缺少官方英文資訊。請在臺大課程網使用新版「書籤小工具」，一鍵自動同步獲取正統雙語課名與簡介！</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="btn-banner-bm" class="btn-nav-action" style="padding:4px 10px; font-size:12px; background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.4); color:#fbbf24;">取得新版書籤</button>
+        <a href="https://course.ntu.edu.tw" target="_blank" style="padding:4px 10px; font-size:12px; background:#f59e0b; color:#000; border-radius:6px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">前往臺大課程網 ↗</a>
+      </div>
+    </div>
+
     <!-- Main Workspace (Timetable Grid + Course Sidebar) -->
     <main class="app-main-grid">
       <!-- Left Column: Timetable Grid View -->
@@ -791,6 +803,21 @@ const html = `<!DOCTYPE html>
       document.getElementById('f-all').textContent = isEn ? \`All (\${courses.length})\` : \`全部 (\${courses.length})\`;
       document.getElementById('f-enrolled').textContent = isEn ? \`Enrolled (\${enrolledCourses.length})\` : \`僅已選上 (\${enrolledCourses.length})\`;
       document.getElementById('f-waitlist').textContent = isEn ? \`Waitlist (\${waitlistCourses.length})\` : \`僅待分發 (\${waitlistCourses.length})\`;
+
+      // 檢查是否缺乏英文資料並顯示提示橫幅
+      const hasMissingEn = isEn && courses.some(c => !c.nameEn);
+      const missingBanner = document.getElementById('missing-en-banner');
+      if (missingBanner) {
+        missingBanner.style.display = hasMissingEn ? 'flex' : 'none';
+        const bText = document.getElementById('banner-text');
+        if (bText) {
+          bText.innerHTML = isEn 
+            ? '<strong>Notice:</strong> Your saved schedule was imported with an older version without official NTU English titles. Please click the updated Bookmarklet on NTU Course Online once to automatically sync complete bilingual data!'
+            : '<strong>提醒：</strong>目前儲存的課表缺少官方英文資訊。請在臺大課程網使用新版「書籤小工具」，一鍵自動同步獲取正統雙語課名與簡介！';
+        }
+        const bBtn = document.getElementById('btn-banner-bm');
+        if (bBtn) bBtn.textContent = isEn ? 'Get Bookmarklet' : '取得新版書籤';
+      }
 
       // 2. 決定過濾後的課程
       let displayCourses = courses;
@@ -1577,10 +1604,20 @@ const html = `<!DOCTYPE html>
     // 檢查 URL Hash 是否有自動同步參數
     function checkUrlImport() {
       const hash = window.location.hash;
-      if (hash && hash.startsWith('#import=')) {
+      if (!hash) return false;
+      const cleanHash = hash.startsWith('#') ? hash.substring(1) : hash;
+      const params = new URLSearchParams(cleanHash);
+      const importVal = params.get('import');
+      const langVal = params.get('lang');
+
+      if (langVal === 'en' || langVal === 'zh') {
+        currentLang = langVal;
+        localStorage.setItem('ntu_lang', langVal);
+      }
+
+      if (importVal) {
         try {
-          const raw = decodeURIComponent(hash.substring(8));
-          const parsed = JSON.parse(raw);
+          const parsed = JSON.parse(importVal);
           if (Array.isArray(parsed) && parsed.length > 0) {
             saveUserCourses(parsed);
             showToast(currentLang === 'en' ? '🎉 Schedule synced and saved successfully!' : '🎉 成功從書籤同步並儲存您的 115-1 課表！');
@@ -1644,6 +1681,17 @@ const html = `<!DOCTYPE html>
         currentLang = 'en';
         localStorage.setItem('ntu_lang', 'en');
         renderApp();
+      });
+    }
+
+    const btnBannerBm = document.getElementById('btn-banner-bm');
+    if (btnBannerBm) {
+      btnBannerBm.addEventListener('click', () => {
+        const modal = document.getElementById('modal-bm-backdrop');
+        if (modal) {
+          modal.classList.add('open');
+          modal.classList.add('show');
+        }
       });
     }
 

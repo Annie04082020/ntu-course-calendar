@@ -462,6 +462,17 @@
         // ---------------------------------------------------------------------
         // 2. 解析中文版 (或通用資訊)
         // ---------------------------------------------------------------------
+        if (html) {
+          // 官方中文課名 (位於 <h1> 標籤，確保即使在英文版網頁執行也能獲取正確中文課名)
+          const h1ZhMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+          if (h1ZhMatch) {
+            const rawH1Zh = h1ZhMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            if (rawH1Zh) {
+              course.name = cleanCourseTitle(rawH1Zh, course.code, course.serial, course.identifier);
+            }
+          }
+        }
+
         if (mainHtml) {
           // 授課教師 (支援多位教授、Lucide 圖標、搜尋連結與文字關鍵字)
           const teacherMatches = [];
