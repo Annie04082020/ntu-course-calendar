@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.0.5">
 </head>
 <body>
 
@@ -772,19 +772,18 @@
             const gridStartRow = (firstPIdx - minPeriodIdx) + 2;
             const gridEndRow = (lastPIdx - minPeriodIdx) + 3;
 
-            if (gridStartRow < 2) return;
-
+            const isWaitlist = !course.isEnrolled;
             const blockHTML = `
-              <div class="tt-course-block ${colorClass} ${course.isEnrolled ? '' : 'waitlist-card'}" 
+              <div class="tt-course-block ${colorClass} ${isWaitlist ? 'waitlist-card' : ''}" 
                    style="grid-column: ${col}; grid-row: ${gridStartRow} / ${gridEndRow};"
                    onclick="openCourseDetail('${course.id}')">
                 <div class="tt-b-top">
                   <span class="tt-b-name">${escapeHtml(course.name)}</span>
-                  <span class="tt-b-status ${course.isEnrolled ? 'enrolled' : 'wait'}">${course.isEnrolled ? '已選上' : '待分發'}</span>
+                  ${isWaitlist ? '<span class="tt-b-status wait">待分發</span>' : ''}
                 </div>
                 <div class="tt-b-bottom">
                   <span class="tt-b-meta">${escapeHtml(course.instructor ? course.instructor + ' · ' : '')}${course.credits} 學分</span>
-                  <span class="tt-b-loc">📍 ${escapeHtml(course.locations && course.locations[0] ? course.locations[0] : '依系所公告')}</span>
+                  <span class="tt-b-loc">📍 ${escapeHtml(formatLocDisplay(course.locations && course.locations[0] ? course.locations[0] : '依公告'))}</span>
                   <span class="tt-b-meta">${g.timeStr}</span>
                 </div>
               </div>
@@ -847,6 +846,21 @@
     function updateSidebarSelectionCount() {
       const label = document.getElementById('sidebar-sel-label');
       label.textContent = `已勾選 ${selectedCourseIds.size} / ${courses.length} 門課程`;
+    }
+
+    function formatLocDisplay(loc) {
+      if (!loc) return '依公告';
+      return String(loc)
+        .replace(/^國立臺灣大學\s*/, '')
+        .replace(/^臺大\s*/, '')
+        .replace(/綜合教學館/, '綜教')
+        .replace(/博雅教學館/, '博雅')
+        .replace(/普通教學館/, '普通')
+        .replace(/共同教學館/, '共同')
+        .replace(/新生教學館/, '新生')
+        .replace(/社會科學院大樓/, '社科院')
+        .replace(/社會科學院/, '社科')
+        .trim();
     }
 
     function escapeHtml(str) {

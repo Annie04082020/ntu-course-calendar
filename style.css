@@ -1178,33 +1178,72 @@ body {
   }
 
   .tt-course-block {
-    padding: 3px 2px !important;
+    padding: 4px 3px !important;
     min-width: 0 !important;
     overflow: hidden !important;
     border-radius: 4px !important;
     box-sizing: border-box !important;
     border-left-width: 2.5px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
+  .tt-b-top {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .tt-b-status {
+    display: none !important;
+  }
+
+  .tt-b-status.wait {
+    display: inline-block !important;
+    font-size: 7.5px !important;
+    padding: 0 2px !important;
+    margin-top: 1px !important;
+    line-height: 1 !important;
+    border-radius: 2px !important;
   }
 
   .tt-b-name {
-    font-size: 9.5px !important;
-    line-height: 1.15 !important;
-    word-break: break-all !important;
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
     font-weight: 700 !important;
     overflow: hidden !important;
     display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
+    -webkit-line-clamp: 3 !important;
     -webkit-box-orient: vertical !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    color: #ffffff !important;
+    letter-spacing: -0.2px !important;
+    width: 100% !important;
+  }
+
+  .tt-b-bottom {
+    margin-top: auto !important;
+    width: 100% !important;
   }
 
   .tt-b-loc {
-    font-size: 8px !important;
-    line-height: 1.1 !important;
-    word-break: break-all !important;
+    font-size: 8.5px !important;
+    line-height: 1.2 !important;
     overflow: hidden !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
-    margin-top: 1px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    margin-top: 2px !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    padding: 1px 3px !important;
+    border-radius: 3px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    color: #f1f5f9 !important;
+    letter-spacing: -0.2px !important;
   }
 
   .tt-b-meta {
