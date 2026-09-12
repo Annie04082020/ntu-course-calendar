@@ -96,13 +96,14 @@ const html = `<!DOCTYPE html>
 
     <!-- Notice Banner for Missing English in legacy data -->
     <div id="missing-en-banner" style="display:none; margin:14px 24px 0 24px; padding:10px 18px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:var(--radius-sm); color:#fbbf24; font-size:13px; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:280px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span id="banner-text"><strong>提醒：</strong>目前儲存的課表缺少官方英文資訊。請在臺大課程網使用新版「書籤小工具」，一鍵自動同步獲取正統雙語課名與簡介！</span>
       </div>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; align-items:center;">
         <button id="btn-banner-bm" class="btn-nav-action" style="padding:4px 10px; font-size:12px; background:rgba(245,158,11,0.2); border-color:rgba(245,158,11,0.4); color:#fbbf24;">取得新版書籤</button>
         <a href="https://course.ntu.edu.tw" target="_blank" style="padding:4px 10px; font-size:12px; background:#f59e0b; color:#000; border-radius:6px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">前往臺大課程網 ↗</a>
+        <button id="btn-close-banner" style="background:transparent; border:none; color:#fbbf24; font-size:16px; cursor:pointer; padding:2px 6px; line-height:1; opacity:0.8;" title="關閉此提醒 (Dismiss)">✕</button>
       </div>
     </div>
 
@@ -805,10 +806,11 @@ const html = `<!DOCTYPE html>
       document.getElementById('f-waitlist').textContent = isEn ? \`Waitlist (\${waitlistCourses.length})\` : \`僅待分發 (\${waitlistCourses.length})\`;
 
       // 檢查是否缺乏英文資料並顯示提示橫幅
-      const hasMissingEn = isEn && courses.some(c => !c.nameEn);
+      const hasMissingEn = isEn && !isDemoMode && courses.length > 0 && courses.some(c => !c.nameEn || !c.nameEn.trim());
       const missingBanner = document.getElementById('missing-en-banner');
       if (missingBanner) {
-        missingBanner.style.display = hasMissingEn ? 'flex' : 'none';
+        const isDismissed = sessionStorage.getItem('dismiss_missing_en_banner') === 'true';
+        missingBanner.style.display = (hasMissingEn && !isDismissed) ? 'flex' : 'none';
         const bText = document.getElementById('banner-text');
         if (bText) {
           bText.innerHTML = isEn 
@@ -1692,6 +1694,15 @@ const html = `<!DOCTYPE html>
           modal.classList.add('open');
           modal.classList.add('show');
         }
+      });
+    }
+
+    const btnCloseBanner = document.getElementById('btn-close-banner');
+    if (btnCloseBanner) {
+      btnCloseBanner.addEventListener('click', () => {
+        sessionStorage.setItem('dismiss_missing_en_banner', 'true');
+        const banner = document.getElementById('missing-en-banner');
+        if (banner) banner.style.display = 'none';
       });
     }
 

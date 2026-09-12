@@ -420,12 +420,21 @@
         // 1. 解析官方英文版 (100% NTU 官方原汁原味)
         // ---------------------------------------------------------------------
         if (htmlEn) {
-          // 官方英文課名 (位於 <h1> 標籤)
-          const h1Match = htmlEn.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-          if (h1Match) {
-            const rawH1 = h1Match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-            if (rawH1) {
-              course.nameEn = cleanCourseTitle(rawH1, course.code, course.serial, course.identifier);
+          // 官方英文課名 (支援 <title> 與 <h1> 標籤)
+          const tmEn = htmlEn.match(/<title[^>]*>([^<]+)<\/title>/i);
+          if (tmEn) {
+            const rawTitle = tmEn[1].split('｜')[0].split('|')[0].replace(/[-–—]\s*(?:NTU|National Taiwan University).*$/i, '').trim();
+            if (rawTitle) {
+              course.nameEn = cleanCourseTitle(rawTitle, course.code, course.serial, course.identifier);
+            }
+          }
+          if (!course.nameEn) {
+            const h1Match = htmlEn.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+            if (h1Match) {
+              const rawH1 = h1Match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+              if (rawH1) {
+                course.nameEn = cleanCourseTitle(rawH1, course.code, course.serial, course.identifier);
+              }
             }
           }
 
@@ -463,12 +472,21 @@
         // 2. 解析中文版 (或通用資訊)
         // ---------------------------------------------------------------------
         if (html) {
-          // 官方中文課名 (位於 <h1> 標籤，確保即使在英文版網頁執行也能獲取正確中文課名)
-          const h1ZhMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-          if (h1ZhMatch) {
-            const rawH1Zh = h1ZhMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-            if (rawH1Zh) {
-              course.name = cleanCourseTitle(rawH1Zh, course.code, course.serial, course.identifier);
+          // 官方中文課名 (優先支援 <title>，確保即使在英文版網頁執行也能獲取正確中文課名)
+          const tmZh = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+          if (tmZh) {
+            const rawTitleZh = tmZh[1].split('｜')[0].split('|')[0].replace(/[-–—]\s*(?:臺大課程網|國立臺灣大學).*$/i, '').trim();
+            if (rawTitleZh) {
+              course.name = cleanCourseTitle(rawTitleZh, course.code, course.serial, course.identifier);
+            }
+          }
+          if (!course.name) {
+            const h1ZhMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+            if (h1ZhMatch) {
+              const rawH1Zh = h1ZhMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+              if (rawH1Zh) {
+                course.name = cleanCourseTitle(rawH1Zh, course.code, course.serial, course.identifier);
+              }
             }
           }
         }
