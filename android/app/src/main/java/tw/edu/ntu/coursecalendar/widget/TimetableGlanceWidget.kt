@@ -15,6 +15,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
 import tw.edu.ntu.coursecalendar.MainActivity
 import tw.edu.ntu.coursecalendar.data.CourseParser
@@ -64,6 +65,7 @@ class TimetableGlanceWidget : GlanceAppWidget() {
                 Image(
                     provider = ImageProvider(bitmap),
                     contentDescription = "臺大週課表",
+                    contentScale = ContentScale.FillBounds,
                     modifier = GlanceModifier.fillMaxSize()
                 )
             }
