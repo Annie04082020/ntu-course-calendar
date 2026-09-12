@@ -7,6 +7,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
 import tw.edu.ntu.coursecalendar.data.Course
+import tw.edu.ntu.coursecalendar.data.CourseRepository
 import tw.edu.ntu.coursecalendar.data.NTUPeriods
 import tw.edu.ntu.coursecalendar.data.ScheduledCourse
 import java.util.*
@@ -65,6 +66,7 @@ object TimetableBitmapRenderer {
 
         // Internal rendering density matches the bitmap scaling
         val density = scale
+        val isEnglish = CourseRepository(context).isEnglish()
 
         // 1. 計算星期與節次
         val calendar = Calendar.getInstance()
@@ -76,6 +78,15 @@ object TimetableBitmapRenderer {
             Calendar.FRIDAY -> "五"
             Calendar.SATURDAY -> "六"
             else -> "日"
+        }
+        val currentWeekdayEn = when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "Mon"
+            Calendar.TUESDAY -> "Tue"
+            Calendar.WEDNESDAY -> "Wed"
+            Calendar.THURSDAY -> "Thu"
+            Calendar.FRIDAY -> "Fri"
+            Calendar.SATURDAY -> "Sat"
+            else -> "Sun"
         }
         val month = calendar.get(Calendar.MONTH) + 1
         val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
@@ -137,7 +148,8 @@ object TimetableBitmapRenderer {
             isSubpixelText = true
         }
         val titleY = pad + (titleH * 0.75f)
-        canvas.drawText("📅 臺大週課表", pad + 4f * density, titleY, titlePaint)
+        val titleText = if (isEnglish) "📅 NTU Timetable" else "📅 臺大週課表"
+        canvas.drawText(titleText, pad + 4f * density, titleY, titlePaint)
 
         val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFF94A3B8.toInt()
@@ -145,9 +157,10 @@ object TimetableBitmapRenderer {
             textAlign = Paint.Align.RIGHT
             isSubpixelText = true
         }
-        canvas.drawText("$month/$dayOfMonth 週$currentWeekday", w - pad - 4f * density, titleY, datePaint)
+        val dateText = if (isEnglish) "$month/$dayOfMonth $currentWeekdayEn" else "$month/$dayOfMonth 週$currentWeekday"
+        canvas.drawText(dateText, w - pad - 4f * density, titleY, datePaint)
 
-        // 5. 左側時間軸標題格 ("節")
+        // 5. 左側時間軸標題格 ("節" / "P")
         val gridTop = pad + titleH + (4f * density)
         val cellBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = 0xFF1E2433.toInt()
@@ -166,7 +179,7 @@ object TimetableBitmapRenderer {
         textCenterPaint.textSize = 9f * density
         textCenterPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         val headBaseline = timeHeaderRect.centerY() - (textCenterPaint.descent() + textCenterPaint.ascent()) / 2f
-        canvas.drawText("節", timeHeaderRect.centerX(), headBaseline, textCenterPaint)
+        canvas.drawText(if (isEnglish) "P" else "節", timeHeaderRect.centerX(), headBaseline, textCenterPaint)
 
         // 6. 左側時間軸各節次 (1 至 8 節完整收錄)
         val contentTop = gridTop + headH + periodGap
@@ -285,7 +298,6 @@ object TimetableBitmapRenderer {
                         else -> 1
                     }
 
-                    val isEnglish = CourseRepository(context).isEnglish()
                     val displayName = course.course.getDisplayName(isEnglish)
 
                     val titleLayout = StaticLayout.Builder.obtain(
