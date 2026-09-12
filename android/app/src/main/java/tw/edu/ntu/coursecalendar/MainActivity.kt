@@ -358,9 +358,13 @@ fun MainScreen(
                 Text(course.getDisplayName(isEnglish), fontWeight = FontWeight.Bold, fontSize = 17.sp)
             },
             text = {
-                val instructor = if (isEnglish && !course.instructorEn.isNullOrBlank()) course.instructorEn else (course.instructor ?: (if (isEnglish) "N/A" else "未註明"))
+                val instructor = if (isEnglish && !course.instructorEn.isNullOrBlank()) {
+                    course.instructorEn ?: ""
+                } else {
+                    course.instructor ?: (if (isEnglish) "N/A" else "未註明")
+                }
                 val remarks = if (isEnglish && !course.remarksEn.isNullOrBlank()) course.remarksEn else course.remarks
-                val desc = if (isEnglish && !course.descriptionEn.isNullOrBlank()) course.descriptionEn else course.description
+                val rawDesc = if (isEnglish && !course.descriptionEn.isNullOrBlank()) course.descriptionEn else course.description
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text((if (isEnglish) "👨‍🏫 Instructor: " else "👨‍🏫 授課教師：") + instructor, fontSize = 14.sp)
@@ -370,10 +374,12 @@ fun MainScreen(
                     Text((if (isEnglish) "📌 Status: " else "📌 選課狀態：") + enrolledText, fontSize = 14.sp)
 
                     if (!remarks.isNullOrBlank()) {
-                        Text((if (isEnglish) "📝 Notes: " else "📝 備註：") + remarks, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text((if (isEnglish) "📝 Notes: " else "📝 備註：") + (remarks ?: ""), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    if (!desc.isNullOrBlank()) {
-                        Text((if (isEnglish) "📖 Syllabus: " else "📖 課程簡介：") + desc.take(200) + (if (desc.length > 200) "..." else ""), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (!rawDesc.isNullOrBlank()) {
+                        val descStr = rawDesc ?: ""
+                        val snippet = if (descStr.length > 200) descStr.substring(0, 200) + "..." else descStr
+                        Text((if (isEnglish) "📖 Syllabus: " else "📖 課程簡介：") + snippet, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             },

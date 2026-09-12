@@ -36,6 +36,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.9'
+          cache-disabled: true
 
       - name: Build Release APK
         working-directory: android
@@ -43,10 +44,8 @@ jobs:
           set -e
           set -o pipefail
           gradle assembleRelease --stacktrace --no-daemon 2>&1 | tee ../build.log || {
-            echo "## Build Failure Log" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 120 ../build.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "::error::Gradle assembleRelease failed"
+            tail -n 120 ../build.log
             exit 1
           }
 
