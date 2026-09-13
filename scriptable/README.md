@@ -15,14 +15,9 @@
 
 ## 介面排版實機範例 (UI Preview)
 
-- 中尺寸微件範例 (4x2 今日焦點與時間軸)：
-  ![中尺寸小工具範例](../ios_tool_look/2x4.jpg)
-
-- 小尺寸微件範例 (2x2 精簡下堂課)：
-  ![小尺寸小工具範例](../ios_tool_look/2x2.jpg)
-
-- 迷你尺寸微件範例 (2x1 即時課堂資訊條)：
-  ![迷你小工具範例](../ios_tool_look/1x2.jpg)
+| 中尺寸微件 (4x2 今日焦點與時間軸) | 小尺寸 (2x2 下堂課) 與 迷你尺寸 (2x1 課堂條) |
+| :---: | :---: |
+| <img src="../ios_tool_look/2x4.jpg" width="340" alt="中尺寸小工具範例" /> | <img src="../ios_tool_look/2x2.jpg" width="160" alt="小尺寸小工具範例" /> &nbsp;&nbsp; <img src="../ios_tool_look/1x2.jpg" width="220" alt="迷你小工具範例" /> |
 
 ---
 

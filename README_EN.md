@@ -39,16 +39,23 @@ All computations and parsing run strictly client-side within the user's browser 
 
 ---
 
-## UI Previews
+## Interface and Widget Previews
 
-- Medium Widget Example (4x2 Today's Schedule and Periods):
-  ![Medium Widget Preview](./ios_tool_look/2x4.jpg)
+### Android Native Widgets and In-App Interface
 
-- Small Widget Example (2x2 Next Class Summary):
-  ![Small Widget Preview](./ios_tool_look/2x2.jpg)
+| Android 2D Weekly Timetable Widget | Today's Schedule Widget (Live Navigation & Countdown) |
+| :---: | :---: |
+| <img src="./android_tool_look/2d_timetable.png" width="340" alt="Android 2D Timetable Widget" /> | <img src="./android_tool_look/next_course.jpg" width="340" alt="Today's Schedule Widget" /> |
 
-- Mini Widget Example (2x1 Instant Class Bar):
-  ![Mini Widget Preview](./ios_tool_look/1x2.jpg)
+| In-App 2D Weekly Schedule View | Class Reminders & Course List |
+| :---: | :---: |
+| <img src="./android_tool_look/app_timetable.png" width="340" alt="In-App 2D Schedule View" /> | <img src="./android_tool_look/app_set_reminder.png" width="340" alt="Reminders and Course List" /> |
+
+### iOS / iPadOS Scriptable Widgets
+
+| Medium Widget (4x2 Today's Focus & Timeline) | Small (2x2 Next Class) & Mini (2x1 Class Bar) |
+| :---: | :---: |
+| <img src="./ios_tool_look/2x4.jpg" width="340" alt="iOS Medium Widget" /> | <img src="./ios_tool_look/2x2.jpg" width="160" alt="iOS Small Widget" /> &nbsp;&nbsp; <img src="./ios_tool_look/1x2.jpg" width="220" alt="iOS Mini Widget" /> |
 
 ---
 

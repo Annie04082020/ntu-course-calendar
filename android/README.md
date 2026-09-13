@@ -55,6 +55,18 @@
 
 ---
 
+## 介面實機預覽 (UI Preview)
+
+| 2D 週課表桌面微件 | 今日節次微件 (含即時導航與倒數) |
+| :---: | :---: |
+| <img src="../android_tool_look/2d_timetable.png" width="340" alt="Android 2D 週課表微件" /> | <img src="../android_tool_look/next_course.jpg" width="340" alt="今日節次微件" /> |
+
+| App 內 2D 週功課表主畫面 | 上課提醒設定與課程清單 |
+| :---: | :---: |
+| <img src="../android_tool_look/app_timetable.png" width="340" alt="App 內 2D 週課表畫面" /> | <img src="../android_tool_look/app_set_reminder.png" width="340" alt="上課提醒設定與課程清單" /> |
+
+---
+
 ## 下載與安裝指南
 
 1. 前往 [GitHub Releases](https://github.com/Annie04082020/ntu-course-calendar/releases) 下載最新版 `NTU-Course-Calendar-Widget.apk`。

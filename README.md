@@ -38,16 +38,23 @@
 
 ---
 
-## 桌面小工具介面範例 (UI Preview)
+## 介面實機預覽 (UI Preview)
 
-- 中尺寸微件範例 (4x2 今日課程與節次時間)：
-  ![中尺寸小工具範例](./ios_tool_look/2x4.jpg)
+### Android 原生桌面微件與 App 介面
 
-- 小尺寸微件範例 (2x2 精簡下堂課)：
-  ![小尺寸小工具範例](./ios_tool_look/2x2.jpg)
+| Android 2D 週課表桌面微件 | 今日節次微件 (含即時導航與倒數) |
+| :---: | :---: |
+| <img src="./android_tool_look/2d_timetable.png" width="340" alt="Android 2D 週課表微件" /> | <img src="./android_tool_look/next_course.jpg" width="340" alt="今日節次微件" /> |
 
-- 迷你尺寸微件範例 (2x1 即時課堂資訊)：
-  ![迷你小工具範例](./ios_tool_look/1x2.jpg)
+| App 內 2D 週功課表主畫面 | 上課提醒設定與課程清單 |
+| :---: | :---: |
+| <img src="./android_tool_look/app_timetable.png" width="340" alt="App 內 2D 週課表畫面" /> | <img src="./android_tool_look/app_set_reminder.png" width="340" alt="上課提醒設定與課程清單" /> |
+
+### iOS / iPadOS Scriptable 桌面小工具介面
+
+| 中尺寸微件 (4x2 今日焦點與時間軸) | 小尺寸 (2x2 下堂課) 與 迷你尺寸 (2x1 課堂條) |
+| :---: | :---: |
+| <img src="./ios_tool_look/2x4.jpg" width="340" alt="iOS 中尺寸微件" /> | <img src="./ios_tool_look/2x2.jpg" width="160" alt="iOS 小尺寸微件" /> &nbsp;&nbsp; <img src="./ios_tool_look/1x2.jpg" width="220" alt="iOS 迷你尺寸微件" /> |
 
 ---
 
