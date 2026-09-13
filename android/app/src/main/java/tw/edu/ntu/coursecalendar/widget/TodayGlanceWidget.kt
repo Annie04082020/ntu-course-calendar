@@ -1,12 +1,12 @@
 package tw.edu.ntu.coursecalendar.widget
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.action.ActionParameters
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -66,6 +66,9 @@ class TodayGlanceWidget : GlanceAppWidget() {
         val activeCourse = todayCourses.find { currentMinutes in it.startMin..it.endMin }
         val nextCourse = if (activeCourse == null) todayCourses.find { it.startMin > currentMinutes } else null
 
+        val courseHighlightParamKey = ActionParameters.Key<String>(MainActivity.EXTRA_HIGHLIGHT_COURSE)
+        val navBuildingParamKey = ActionParameters.Key<String>(MainActivity.EXTRA_NAVIGATE_BUILDING)
+
         provideContent {
             Column(
                 modifier = GlanceModifier
@@ -73,9 +76,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     .background(WidgetColors.BgStart)
                     .cornerRadius(16.dp)
                     .padding(10.dp)
-                    .clickable(actionStartActivity(Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }))
+                    .clickable(actionStartActivity<MainActivity>())
             ) {
                 // 頂部標題列
                 Row(
@@ -142,20 +143,14 @@ class TodayGlanceWidget : GlanceAppWidget() {
 
                             val resolvedLocation = CampusBuildings.resolveLocation(c.location)
 
-                            // 點擊課堂開啟 App 詳情
-                            val openCourseDetailIntent = Intent(context, MainActivity::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                putExtra(MainActivity.EXTRA_HIGHLIGHT_COURSE, c.course.name)
-                            }
-
                             Row(
                                 modifier = GlanceModifier
                                     .fillMaxWidth()
                                     .padding(vertical = 2.dp)
-                                    .background(ColorProvider(if (isNow) WidgetColors.CardHighlight else (if (isNext) WidgetColors.HeaderBg else WidgetColors.CardBg)))
+                                    .background(ColorProvider(if (isNow) WidgetColors.CardHighlight else (if (isNext) WidgetColors.CardHighlight.copy(alpha = 0.5f) else WidgetColors.CardBg)))
                                     .cornerRadius(8.dp)
                                     .padding(horizontal = 8.dp, vertical = 5.dp)
-                                    .clickable(actionStartActivity(openCourseDetailIntent)),
+                                    .clickable(actionStartActivity<MainActivity>(actionParametersOf(courseHighlightParamKey to c.course.name))),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // 左側節次與時間標籤
@@ -241,16 +236,12 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                 // 右側：小工具專屬「📍 導航」按鈕
                                 if (resolvedLocation != null) {
                                     Spacer(modifier = GlanceModifier.width(4.dp))
-                                    val navUrl = "https://www.google.com/maps/dir/?api=1&destination=${resolvedLocation.building.lat},${resolvedLocation.building.lng}&travelmode=walking"
-                                    val navIntent = Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)).apply {
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                    }
                                     Box(
                                         modifier = GlanceModifier
                                             .background(ColorProvider(WidgetColors.Accent.copy(alpha = 0.25f)))
                                             .cornerRadius(6.dp)
                                             .padding(horizontal = 6.dp, vertical = 4.dp)
-                                            .clickable(actionStartActivity(navIntent)),
+                                            .clickable(actionStartActivity<MainActivity>(actionParametersOf(navBuildingParamKey to resolvedLocation.building.id))),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(

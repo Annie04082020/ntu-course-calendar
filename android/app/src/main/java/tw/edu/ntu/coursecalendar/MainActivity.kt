@@ -48,6 +48,7 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_HIGHLIGHT_COURSE = "extra_highlight_course"
+        const val EXTRA_NAVIGATE_BUILDING = "extra_navigate_building"
     }
 
     private lateinit var repo: CourseRepository
@@ -59,7 +60,7 @@ class MainActivity : ComponentActivity() {
         repo = CourseRepository(this)
         repo.triggerWidgetUpdate()
 
-        handleIntent(intent)
+        if (handleIntent(intent)) return
 
         setContent {
             NTUCourseCalendarTheme {
@@ -84,7 +85,17 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    private fun handleIntent(intent: Intent?) {
+    private fun handleIntent(intent: Intent?): Boolean {
+        val navBuildingId = intent?.getStringExtra(EXTRA_NAVIGATE_BUILDING)
+        if (!navBuildingId.isNullOrBlank()) {
+            val building = CampusBuildings.BUILDINGS.find { it.id == navBuildingId }
+            if (building != null) {
+                CampusBuildings.launchNavigation(this, building)
+                finish()
+                return true
+            }
+        }
+
         val highlight = intent?.getStringExtra(EXTRA_HIGHLIGHT_COURSE)
         if (!highlight.isNullOrBlank()) {
             highlightCourseFlow.value = highlight
@@ -112,6 +123,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        return false
     }
 }
 
