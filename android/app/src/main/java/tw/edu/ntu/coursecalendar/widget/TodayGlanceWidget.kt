@@ -1,6 +1,8 @@
 package tw.edu.ntu.coursecalendar.widget
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -18,6 +20,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import tw.edu.ntu.coursecalendar.MainActivity
+import tw.edu.ntu.coursecalendar.data.CampusBuildings
 import tw.edu.ntu.coursecalendar.data.CourseParser
 import tw.edu.ntu.coursecalendar.data.CourseRepository
 import tw.edu.ntu.coursecalendar.data.ScheduledCourse
@@ -59,6 +62,10 @@ class TodayGlanceWidget : GlanceAppWidget() {
 
         val todayCourses = weekSchedule[currentWeekday] ?: emptyList()
 
+        // 判斷當前進行中與下一堂課
+        val activeCourse = todayCourses.find { currentMinutes in it.startMin..it.endMin }
+        val nextCourse = if (activeCourse == null) todayCourses.find { it.startMin > currentMinutes } else null
+
         provideContent {
             Column(
                 modifier = GlanceModifier
@@ -66,7 +73,9 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     .background(WidgetColors.BgStart)
                     .cornerRadius(16.dp)
                     .padding(10.dp)
-                    .clickable(actionStartActivity<MainActivity>())
+                    .clickable(actionStartActivity(Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }))
             ) {
                 // 頂部標題列
                 Row(
@@ -121,7 +130,8 @@ class TodayGlanceWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.fillMaxSize()
                     ) {
                         todayCourses.take(4).forEachIndexed { idx, c ->
-                            val isNow = currentMinutes in c.startMin..c.endMin
+                            val isNow = (c == activeCourse)
+                            val isNext = (c == nextCourse)
                             val displayName = c.course.getDisplayName(isEnglish)
                             val theme = WidgetColors.getCourseTheme(c.course.name)
                             val periodsText = if (isEnglish) {
@@ -130,24 +140,33 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                 if (c.firstPeriod == c.lastPeriod) "第 ${c.firstPeriod} 節" else "第 ${c.firstPeriod}-${c.lastPeriod} 節"
                             }
 
+                            val resolvedLocation = CampusBuildings.resolveLocation(c.location)
+
+                            // 點擊課堂開啟 App 詳情
+                            val openCourseDetailIntent = Intent(context, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                putExtra(MainActivity.EXTRA_HIGHLIGHT_COURSE, c.course.name)
+                            }
+
                             Row(
                                 modifier = GlanceModifier
                                     .fillMaxWidth()
                                     .padding(vertical = 2.dp)
-                                    .background(ColorProvider(if (isNow) WidgetColors.CardHighlight else WidgetColors.CardBg))
+                                    .background(ColorProvider(if (isNow) WidgetColors.CardHighlight else (if (isNext) WidgetColors.HeaderBg else WidgetColors.CardBg)))
                                     .cornerRadius(8.dp)
-                                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                                    .clickable(actionStartActivity(openCourseDetailIntent)),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // 左側節次與時間標籤
                                 Column(
-                                    modifier = GlanceModifier.width(64.dp),
+                                    modifier = GlanceModifier.width(62.dp),
                                     horizontalAlignment = Alignment.Start
                                 ) {
                                     Text(
                                         text = periodsText,
                                         style = TextStyle(
-                                            color = ColorProvider(if (isNow) WidgetColors.Warning else WidgetColors.AccentGlow),
+                                            color = ColorProvider(if (isNow) WidgetColors.Warning else (if (isNext) WidgetColors.Accent else WidgetColors.AccentGlow)),
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -163,7 +182,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
 
                                 Spacer(modifier = GlanceModifier.width(6.dp))
 
-                                // 右側課程彩色區塊
+                                // 中間課程資訊
                                 Column(
                                     modifier = GlanceModifier.defaultWeight()
                                 ) {
@@ -182,11 +201,23 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                         )
                                         if (isNow) {
                                             Spacer(modifier = GlanceModifier.width(4.dp))
+                                            val remainMin = maxOf(0, c.endMin - currentMinutes)
                                             Text(
-                                                text = if (isEnglish) "●Active" else "●進行中",
+                                                text = if (isEnglish) "●Active(${remainMin}m)" else "●進行中(剩${remainMin}分)",
                                                 style = TextStyle(
                                                     color = ColorProvider(WidgetColors.Warning),
-                                                    fontSize = 9.sp,
+                                                    fontSize = 8.5.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            )
+                                        } else if (isNext) {
+                                            Spacer(modifier = GlanceModifier.width(4.dp))
+                                            val waitMin = maxOf(0, c.startMin - currentMinutes)
+                                            Text(
+                                                text = if (isEnglish) "●Next(${waitMin}m)" else "●下一堂(${waitMin}分後)",
+                                                style = TextStyle(
+                                                    color = ColorProvider(WidgetColors.Accent),
+                                                    fontSize = 8.5.sp,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             )
@@ -203,6 +234,32 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                                 fontSize = 9.sp
                                             ),
                                             maxLines = 1
+                                        )
+                                    }
+                                }
+
+                                // 右側：小工具專屬「📍 導航」按鈕
+                                if (resolvedLocation != null) {
+                                    Spacer(modifier = GlanceModifier.width(4.dp))
+                                    val navUrl = "https://www.google.com/maps/dir/?api=1&destination=${resolvedLocation.building.lat},${resolvedLocation.building.lng}&travelmode=walking"
+                                    val navIntent = Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                    }
+                                    Box(
+                                        modifier = GlanceModifier
+                                            .background(ColorProvider(WidgetColors.Accent.copy(alpha = 0.25f)))
+                                            .cornerRadius(6.dp)
+                                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                                            .clickable(actionStartActivity(navIntent)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (isEnglish) "📍Nav" else "📍導航",
+                                            style = TextStyle(
+                                                color = ColorProvider(WidgetColors.Accent),
+                                                fontSize = 9.5.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
                                         )
                                     }
                                 }

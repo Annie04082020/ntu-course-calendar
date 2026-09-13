@@ -95,10 +95,22 @@ class CourseRepository(private val context: Context) {
         return prefs.getString(keyCourses, null) == null
     }
 
+    private val keyReminderMinutes = "reminder_minutes_before"
+
+    fun getReminderMinutes(): Int {
+        return prefs.getInt(keyReminderMinutes, 10) // 預設 10 分鐘前提醒
+    }
+
+    fun setReminderMinutes(minutes: Int) {
+        prefs.edit().putInt(keyReminderMinutes, minutes).apply()
+        tw.edu.ntu.coursecalendar.reminder.ClassReminderManager.scheduleAllReminders(context)
+    }
+
     fun saveCourses(courses: List<Course>) {
         val json = gson.toJson(courses)
         prefs.edit().putString(keyCourses, json).apply()
         triggerWidgetUpdate()
+        tw.edu.ntu.coursecalendar.reminder.ClassReminderManager.scheduleAllReminders(context)
     }
 
     fun saveCoursesFromJson(json: String): Boolean {
@@ -108,6 +120,7 @@ class CourseRepository(private val context: Context) {
             if (parsed.isNullOrEmpty()) return false
             prefs.edit().putString(keyCourses, gson.toJson(parsed)).apply()
             triggerWidgetUpdate()
+            tw.edu.ntu.coursecalendar.reminder.ClassReminderManager.scheduleAllReminders(context)
             true
         } catch (e: Exception) {
             false
@@ -117,6 +130,7 @@ class CourseRepository(private val context: Context) {
     fun clearUserData() {
         prefs.edit().remove(keyCourses).apply()
         triggerWidgetUpdate()
+        tw.edu.ntu.coursecalendar.reminder.ClassReminderManager.cancelAllReminders(context)
     }
 
     fun triggerWidgetUpdate() {
@@ -130,3 +144,4 @@ class CourseRepository(private val context: Context) {
         }
     }
 }
+

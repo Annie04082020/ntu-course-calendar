@@ -1,12 +1,17 @@
 package tw.edu.ntu.coursecalendar
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,11 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import tw.edu.ntu.coursecalendar.data.CampusBuildings
 import tw.edu.ntu.coursecalendar.data.Course
 import tw.edu.ntu.coursecalendar.data.CourseParser
 import tw.edu.ntu.coursecalendar.data.CourseRepository
@@ -38,7 +46,12 @@ import java.net.URLDecoder
 import java.util.*
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        const val EXTRA_HIGHLIGHT_COURSE = "extra_highlight_course"
+    }
+
     private lateinit var repo: CourseRepository
+    private var highlightCourseFlow = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +65,8 @@ class MainActivity : ComponentActivity() {
             NTUCourseCalendarTheme {
                 MainScreen(
                     repo = repo,
+                    highlightCourseName = highlightCourseFlow.value,
+                    onClearHighlight = { highlightCourseFlow.value = null },
                     onOpenWebsite = {
                         val browserIntent = Intent(
                             Intent.ACTION_VIEW,
@@ -70,6 +85,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
+        val highlight = intent?.getStringExtra(EXTRA_HIGHLIGHT_COURSE)
+        if (!highlight.isNullOrBlank()) {
+            highlightCourseFlow.value = highlight
+        }
+
         val data: Uri? = intent?.data
         if (data != null) {
             var jsonString: String? = null
@@ -99,6 +119,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(
     repo: CourseRepository,
+    highlightCourseName: String? = null,
+    onClearHighlight: () -> Unit = {},
     onOpenWebsite: () -> Unit
 ) {
     var courses by remember { mutableStateOf(repo.getCourses()) }
@@ -110,6 +132,31 @@ fun MainScreen(
     var selectedCourseDetail by remember { mutableStateOf<Course?>(null) }
     var importText by remember { mutableStateOf("") }
     val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    var reminderMinutes by remember { mutableStateOf(repo.getReminderMinutes()) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (!isGranted) {
+                Toast.makeText(
+                    context,
+                    if (isEnglish) "Notification permission denied" else "未取得通知權限，無法發送上課提醒",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    )
+
+    LaunchedEffect(highlightCourseName) {
+        if (!highlightCourseName.isNullOrBlank()) {
+            val match = courses.find { it.name == highlightCourseName }
+            if (match != null) {
+                selectedCourseDetail = match
+            }
+            onClearHighlight()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -277,6 +324,81 @@ fun MainScreen(
                     }
 
                     item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("🔔", fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (isEnglish) "Class Start Reminders" else "上課前提醒推播",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Text(
+                                        text = when (reminderMinutes) {
+                                            5 -> if (isEnglish) "5 mins before" else "上課前 5 分鐘"
+                                            10 -> if (isEnglish) "10 mins before" else "上課前 10 分鐘"
+                                            else -> if (isEnglish) "Off" else "已關閉"
+                                        },
+                                        fontSize = 12.sp,
+                                        color = if (reminderMinutes > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = if (isEnglish) "Get a brief notification with course and classroom before each class starts."
+                                    else "每節課前在手機通知列簡短提示下一堂課程與教室位置。",
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    listOf(
+                                        0 to (if (isEnglish) "Off" else "關閉"),
+                                        5 to (if (isEnglish) "5 mins" else "5 分鐘前"),
+                                        10 to (if (isEnglish) "10 mins" else "10 分鐘前")
+                                    ).forEach { (mins, label) ->
+                                        val isSelected = (reminderMinutes == mins)
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                if (mins > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                    }
+                                                }
+                                                repo.setReminderMinutes(mins)
+                                                reminderMinutes = mins
+                                                val msg = if (mins > 0) {
+                                                    if (isEnglish) "Reminders set to $mins mins before class!" else "已設定於上課前 $mins 分鐘提醒！"
+                                                } else {
+                                                    if (isEnglish) "Reminders turned off" else "已關閉上課提醒"
+                                                }
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                            },
+                                            label = { Text(label, fontSize = 12.sp) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    item {
                         Text(
                             if (isEnglish) "Enrolled Courses (${courses.size})" else "已載入課程 (${courses.size} 門課)",
                             fontWeight = FontWeight.Bold,
@@ -365,10 +487,55 @@ fun MainScreen(
                 }
                 val remarks = if (isEnglish && !course.remarksEn.isNullOrBlank()) course.remarksEn else course.remarks
                 val rawDesc = if (isEnglish && !course.descriptionEn.isNullOrBlank()) course.descriptionEn else course.description
+                val rawLoc = course.locations?.firstOrNull() ?: ""
+                val resolvedLocation = CampusBuildings.resolveLocation(rawLoc)
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text((if (isEnglish) "👨‍🏫 Instructor: " else "👨‍🏫 授課教師：") + instructor, fontSize = 14.sp)
                     Text((if (isEnglish) "📍 Location: " else "📍 教室地點：") + (course.locations?.joinToString("、") ?: (if (isEnglish) "TBA" else "依系所公告")), fontSize = 14.sp)
+
+                    // 辨識到台大館舍時，顯示館舍名稱與步行導航按鈕
+                    if (resolvedLocation != null) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "🏫 " + if (isEnglish) resolvedLocation.building.nameEn else resolvedLocation.building.name,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    if (resolvedLocation.room.isNotBlank()) {
+                                        Text(
+                                            text = (if (isEnglish) "Classroom: " else "教室：") + resolvedLocation.room,
+                                            fontSize = 11.5.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                FilledTonalButton(
+                                    onClick = {
+                                        CampusBuildings.launchNavigation(context, resolvedLocation.building)
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(if (isEnglish) "📍 Walk Nav" else "📍 步行導航", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
                     Text((if (isEnglish) "⏰ Schedule: " else "⏰ 上課節次：") + (course.timeSlots?.joinToString("，") ?: (if (isEnglish) "TBA" else "未排定")), fontSize = 14.sp)
                     val enrolledText = if (course.isEnrolled) (if (isEnglish) "Enrolled" else "正選") else (if (isEnglish) "Waitlist" else "候補")
                     Text((if (isEnglish) "📌 Status: " else "📌 選課狀態：") + enrolledText, fontSize = 14.sp)
