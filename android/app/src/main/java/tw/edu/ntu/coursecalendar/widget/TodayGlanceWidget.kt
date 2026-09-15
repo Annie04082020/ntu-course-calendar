@@ -164,14 +164,16 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                             color = ColorProvider(if (isNow) WidgetColors.Warning else (if (isNext) WidgetColors.Accent else WidgetColors.AccentGlow)),
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold
-                                        )
+                                        ),
+                                        maxLines = 1
                                     )
                                     Text(
                                         text = "${c.startTimeText}-${c.endTimeText}",
                                         style = TextStyle(
                                             color = ColorProvider(WidgetColors.SecondaryText),
                                             fontSize = 8.sp
-                                        )
+                                        ),
+                                        maxLines = 1
                                     )
                                 }
 
@@ -181,44 +183,43 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                 Column(
                                     modifier = GlanceModifier.defaultWeight()
                                 ) {
-                                    Row(
-                                        modifier = GlanceModifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                    // 課程名稱（支援最多 2 行換行，避免超長課名被截斷）
+                                    Text(
+                                        text = displayName,
+                                        style = TextStyle(
+                                            color = ColorProvider(theme.text),
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        maxLines = 2
+                                    )
+
+                                    // 即時課堂狀態（進行中 / 下一堂倒數）：獨立一行換行顯示，避免與課名橫向擠壓
+                                    if (isNow) {
+                                        val remainMin = maxOf(0, c.endMin - currentMinutes)
                                         Text(
-                                            text = displayName,
+                                            text = if (isEnglish) "● Active (${remainMin}m)" else "● 進行中 (剩 ${remainMin} 分)",
                                             style = TextStyle(
-                                                color = ColorProvider(theme.text),
-                                                fontSize = 12.sp,
+                                                color = ColorProvider(WidgetColors.Warning),
+                                                fontSize = 8.5.sp,
                                                 fontWeight = FontWeight.Bold
                                             ),
                                             maxLines = 1
                                         )
-                                        if (isNow) {
-                                            Spacer(modifier = GlanceModifier.width(4.dp))
-                                            val remainMin = maxOf(0, c.endMin - currentMinutes)
-                                            Text(
-                                                text = if (isEnglish) "●Active(${remainMin}m)" else "●進行中(剩${remainMin}分)",
-                                                style = TextStyle(
-                                                    color = ColorProvider(WidgetColors.Warning),
-                                                    fontSize = 8.5.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                        } else if (isNext) {
-                                            Spacer(modifier = GlanceModifier.width(4.dp))
-                                            val waitMin = maxOf(0, c.startMin - currentMinutes)
-                                            Text(
-                                                text = if (isEnglish) "●Next(${waitMin}m)" else "●下一堂(${waitMin}分後)",
-                                                style = TextStyle(
-                                                    color = ColorProvider(WidgetColors.Accent),
-                                                    fontSize = 8.5.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                        }
+                                    } else if (isNext) {
+                                        val waitMin = maxOf(0, c.startMin - currentMinutes)
+                                        Text(
+                                            text = if (isEnglish) "● Next (${waitMin}m)" else "● 下一堂 (${waitMin} 分後)",
+                                            style = TextStyle(
+                                                color = ColorProvider(WidgetColors.Accent),
+                                                fontSize = 8.5.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            maxLines = 1
+                                        )
                                     }
 
+                                    // 教室地點與授課教師
                                     if (c.location.isNotBlank()) {
                                         val instructor = if (isEnglish && !c.course.instructorEn.isNullOrBlank()) c.course.instructorEn else c.course.instructor
                                         val teacher = if (instructor.isNullOrBlank()) "" else " · $instructor"
@@ -250,7 +251,8 @@ class TodayGlanceWidget : GlanceAppWidget() {
                                                 color = ColorProvider(WidgetColors.Accent),
                                                 fontSize = 9.5.sp,
                                                 fontWeight = FontWeight.Bold
-                                            )
+                                            ),
+                                            maxLines = 1
                                         )
                                     }
                                 }
